@@ -141,7 +141,7 @@ export default function ParlaysPage() {
     try {
       const updatedParlays = await Promise.all(
         placedParlays.map(async (parlay) => {
-          if (parlay.status === 'active' || parlay.status === 'pending') {
+          if (parlay.status === 'active') {
             return await checkParlayStatus(parlay)
           }
           return parlay
@@ -552,7 +552,7 @@ export default function ParlaysPage() {
                                     <div className="text-xs text-terminal-text-secondary">Entry Odds</div>
                                     <div className="font-semibold">{(parlay.combinedOdds * 100).toFixed(4)}¢</div>
                                   </div>
-                                  {(parlay.status === 'active' || parlay.status === 'pending') && parlay.currentValue !== undefined && (
+                                  {parlay.status === 'active' && parlay.currentValue !== undefined && (
                                     <>
                                       <div className="flex-shrink-0">
                                         <div className="text-xs text-terminal-text-secondary">Current Value</div>
@@ -619,7 +619,7 @@ export default function ParlaysPage() {
                                     </span>
                                   </div>
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
-                                    {(parlay.status === 'active' || parlay.status === 'pending') && parlay.currentValue !== undefined && parlay.currentCombinedOdds !== undefined && parlay.currentCombinedOdds > 0 && (
+                                    {parlay.status === 'active' && parlay.currentValue !== undefined && parlay.currentCombinedOdds !== undefined && parlay.currentCombinedOdds > 0 && (
                                       <div>
                                         <div className="text-xs text-terminal-text-secondary mb-1">Current Combined Odds</div>
                                         <div className="font-semibold">{(parlay.currentCombinedOdds * 100).toFixed(4)}¢</div>
@@ -637,7 +637,7 @@ export default function ParlaysPage() {
                                         </div>
                                       </div>
                                     )}
-                                    {parlay.status !== 'active' && parlay.status !== 'pending' && parlay.status !== 'won' && parlay.status !== 'lost' && (
+                                    {parlay.status === 'partial' && (
                                       <div>
                                         <div className="text-xs text-terminal-text-secondary mb-1">Potential Payout</div>
                                         <div className="font-semibold text-terminal-success">{parlay.potentialPayout.toFixed(4)} SOL</div>

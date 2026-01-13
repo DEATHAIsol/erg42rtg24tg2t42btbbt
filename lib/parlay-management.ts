@@ -6,6 +6,8 @@ export interface ParlayLeg {
   outcome: 'Yes' | 'No'
   price: number // Decimal 0-1
   id: string
+  legStatus?: 'pending' | 'won' | 'lost' // Status of individual leg
+  currentPrice?: number // Current price of the leg
 }
 
 export interface PlacedParlay {
@@ -17,6 +19,9 @@ export interface PlacedParlay {
   placedAt: string // ISO date string
   status: 'active' | 'won' | 'lost' | 'partial'
   currentValue?: number // Current value based on current prices
+  currentCombinedOdds?: number // Current combined odds based on live prices
+  currentPnL?: number // Current profit/loss
+  actualPayout?: number // Actual payout when won
   settledAt?: string // When the parlay was settled
 }
 
@@ -179,10 +184,12 @@ export async function checkParlayStatus(parlay: PlacedParlay): Promise<PlacedPar
     }
 
     if (newStatus !== parlay.status) {
+      const isSettled = newStatus === 'won' || newStatus === 'lost' || newStatus === 'partial'
       const updated: PlacedParlay = {
         ...parlay,
         status: newStatus,
-        settledAt: newStatus !== 'active' ? new Date().toISOString() : undefined,
+        settledAt: isSettled ? new Date().toISOString() : undefined,
+        actualPayout: newStatus === 'won' ? parlay.potentialPayout : undefined,
       }
       updatePlacedParlay(updated)
       return updated
@@ -229,14 +236,17 @@ export async function updateAllParlayCurrentValues(parlays: PlacedParlay[]): Pro
         currentCombinedOdds *= currentPrice
       }
 
-      // Calculate current value
+      // Calculate current value and PnL
       const currentValue = currentCombinedOdds > 0 
         ? parlay.stakeAmount / currentCombinedOdds 
         : parlay.stakeAmount
+      const currentPnL = currentValue - parlay.stakeAmount
 
       const updatedParlay: PlacedParlay = {
         ...parlay,
         currentValue,
+        currentCombinedOdds,
+        currentPnL,
       }
 
       updatePlacedParlay(updatedParlay)
