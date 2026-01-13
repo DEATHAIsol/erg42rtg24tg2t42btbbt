@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { dbOperations } from '@/lib/db'
+import { dbOperations } from '@/lib/db-adapter'
 
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 
@@ -12,7 +12,7 @@ export async function GET(
     
     // First, try to get from database
     try {
-      const dbMarket = dbOperations.getMarketById(marketId)
+      const dbMarket = await dbOperations.getMarketById(marketId)
       if (dbMarket) {
         // Return database market with proper structure
         return NextResponse.json({
@@ -60,7 +60,7 @@ export async function GET(
       // If 422 or 404, try to get from database as fallback
       if (response.status === 422 || response.status === 404) {
         try {
-          const dbMarket = dbOperations.getMarketById(marketId)
+          const dbMarket = await dbOperations.getMarketById(marketId)
           if (dbMarket) {
             return NextResponse.json({
               id: dbMarket.id,

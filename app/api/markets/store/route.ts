@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { dbOperations } from '@/lib/db'
+import { dbOperations } from '@/lib/db-adapter'
 import { PolymarketMarket } from '@/lib/polymarket'
 import { extractMarketTags } from '@/lib/category-mapper'
 import { parseVolume } from '@/lib/format'
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     // Clear existing markets to reset database
     console.log('Clearing existing markets from database...')
-    dbOperations.clearAll()
+    await dbOperations.clearAll()
     console.log('Database cleared. Starting fresh market sync...')
 
     // Fetch ALL active markets directly from Gamma API
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
         // Store in database when buffer reaches batch size
         if (batchBuffer.length >= dbBatchSize) {
           console.log(`Storing batch of ${batchBuffer.length} markets in database...`)
-          dbOperations.upsertMarkets(batchBuffer)
+          await dbOperations.upsertMarkets(batchBuffer)
           totalStored += batchBuffer.length
           console.log(`Total stored so far: ${totalStored} markets`)
           batchBuffer = [] // Clear buffer
@@ -219,13 +219,13 @@ export async function POST(request: NextRequest) {
     // Store any remaining markets in buffer
     if (batchBuffer.length > 0) {
       console.log(`Storing final batch of ${batchBuffer.length} markets in database...`)
-      dbOperations.upsertMarkets(batchBuffer)
+      await dbOperations.upsertMarkets(batchBuffer)
       totalStored += batchBuffer.length
       console.log(`Stored final batch. Total stored in this sync: ${totalStored} markets`)
     }
     
     // Verify the store was updated
-    const stats = dbOperations.getStats()
+    const stats = await dbOperations.getStats()
     console.log(`✅ Market sync complete!`)
     console.log(`   - Markets synced in this run: ${totalStored}`)
     console.log(`   - Total markets in database: ${stats.totalMarkets}`)
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
 // Get store status
 export async function GET() {
   try {
-    const stats = dbOperations.getStats()
+    const stats = await dbOperations.getStats()
     console.log(`GET /api/markets/store - Stats: ${JSON.stringify(stats)}`)
     return NextResponse.json(stats)
   } catch (error: any) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { dbOperations } from '@/lib/db'
+import { dbOperations } from '@/lib/db-adapter'
 
 const CLOB_API_BASE = 'https://clob.polymarket.com'
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       const pricePromises = batch.map(async (marketId: string) => {
         try {
           // Get market data from database first (optional - we can fetch from Gamma API directly)
-          const market = dbOperations.getMarketById(marketId)
+          const market = await dbOperations.getMarketById(marketId)
           // Don't fail if market not in DB - we can still fetch from Gamma API
 
           // Fetch market data from Gamma API to get outcomePrices and clobTokenIds
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
             const yesOB = (yesBookData && ((yesBookData.bids && yesBookData.bids.length > 0) || (yesBookData.asks && yesBookData.asks.length > 0))) ? yesBookData : undefined
             const noOB = (noBookData && ((noBookData.bids && noBookData.bids.length > 0) || (noBookData.asks && noBookData.asks.length > 0))) ? noBookData : undefined
             
-            dbOperations.updateMarketPrices(marketId, {
+            await dbOperations.updateMarketPrices(marketId, {
               yesPrice: validatedYesPrice,
               noPrice: validatedNoPrice,
               yesBuyPrice: yesBuyPrice,

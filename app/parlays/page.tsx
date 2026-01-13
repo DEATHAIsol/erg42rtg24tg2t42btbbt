@@ -1251,7 +1251,7 @@ export default function ParlaysPage() {
                                 : 'bg-terminal-surface/50 border border-terminal-border/50 text-terminal-text-secondary hover:border-terminal-accent/50'
                             }`}
                           >
-                            {categoryLabels[category] || category}
+                            {categoryLabels[category as keyof typeof categoryLabels] || category}
                           </button>
                         )
                       })}

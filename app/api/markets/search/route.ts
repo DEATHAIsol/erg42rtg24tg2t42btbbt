@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { dbOperations } from '@/lib/db'
+import { dbOperations } from '@/lib/db-adapter'
 
 // Search all stored markets
 export async function GET(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     // Search markets in database
-    const { markets, total } = dbOperations.searchMarkets(
+    const { markets, total } = await dbOperations.searchMarkets(
       query,
       {
         tags: tags.length > 0 ? tags : undefined,
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     // Trigger price sync for visible markets in the background (non-blocking)
     if (markets.length > 0) {
-      const marketIds = markets.map(m => m.id)
+      const marketIds = markets.map((m: any) => m.id)
       // Don't await - let it run in background
       fetch(`${request.nextUrl.origin}/api/markets/sync-prices`, {
         method: 'POST',

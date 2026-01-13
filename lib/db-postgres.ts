@@ -19,7 +19,10 @@ function getPool(): Pool {
     }
     pool = new Pool({
       connectionString,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      // Supabase requires SSL in production
+      ssl: process.env.NODE_ENV === 'production' || connectionString.includes('supabase.co') 
+        ? { rejectUnauthorized: false } 
+        : false,
     })
   }
   return pool
@@ -409,4 +412,5 @@ export const dbOperations = {
     return result.rows.map(rowToMarket)
   },
 }
+
 

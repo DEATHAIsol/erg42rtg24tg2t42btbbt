@@ -89,8 +89,8 @@ export async function GET(
     // Step 3.5: Get market from database to use stored clobTokenIds
     let dbMarket: any = null
     try {
-      const { dbOperations } = await import('@/lib/db')
-      dbMarket = dbOperations.getMarketById(marketId)
+      const { dbOperations } = await import('@/lib/db-adapter')
+      dbMarket = await dbOperations.getMarketById(marketId)
     } catch (error) {
       console.warn('Error fetching market from database:', error)
     }

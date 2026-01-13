@@ -32,9 +32,10 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Exclude better-sqlite3 from client-side bundle
+      // Exclude server-only modules from client-side bundle
       config.externals = config.externals || []
       config.externals.push('better-sqlite3')
+      config.externals.push('pg')
     } else {
       // For client-side, ensure bs58 is properly resolved
       config.resolve.fallback = {

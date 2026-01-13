@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { dbOperations } from '@/lib/db'
+import { dbOperations } from '@/lib/db-adapter'
 
 // Get top markets (for main page display)
 export async function GET(request: NextRequest) {
@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
     const sortBy = (searchParams.get('sortBy') || 'volume') as 'volume' | 'liquidity' | 'newest' | 'oldest'
 
     // Get top markets from database
-    const { markets, total } = dbOperations.getTopMarkets(limit, offset, sortBy)
+    const { markets, total } = await dbOperations.getTopMarkets(limit, offset, sortBy)
 
     // Trigger price sync for visible markets in the background (non-blocking)
     if (markets.length > 0) {
-      const marketIds = markets.map(m => m.id)
+      const marketIds = markets.map((m: any) => m.id)
       // Don't await - let it run in background
       fetch(`${request.nextUrl.origin}/api/markets/sync-prices`, {
         method: 'POST',

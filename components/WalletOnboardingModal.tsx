@@ -264,8 +264,8 @@ export function WalletOnboardingModal({ wallet, onClose, onComplete }: WalletOnb
                 <CheckCircle className="text-terminal-success" size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-terminal-text-primary">You're All Set!</h2>
-                <p className="text-sm text-terminal-text-secondary">Here's how to use your wallet</p>
+                <h2 className="text-2xl font-bold text-terminal-text-primary">You&apos;re All Set!</h2>
+                <p className="text-sm text-terminal-text-secondary">Here&apos;s how to use your wallet</p>
               </div>
             </div>
 
@@ -278,7 +278,7 @@ export function WalletOnboardingModal({ wallet, onClose, onComplete }: WalletOnb
                   <div>
                     <div className="font-semibold text-terminal-text-primary mb-1">Deposit SOL</div>
                     <p className="text-sm text-terminal-text-secondary">
-                      Click the "Deposit" button to see your wallet address and QR code. Send SOL from an exchange 
+                      Click the &quot;Deposit&quot; button to see your wallet address and QR code. Send SOL from an exchange 
                       or another wallet to fund your trading account.
                     </p>
                   </div>
@@ -309,7 +309,7 @@ export function WalletOnboardingModal({ wallet, onClose, onComplete }: WalletOnb
                     <div className="font-semibold text-terminal-text-primary mb-1">Keep Your Backup Safe</div>
                     <p className="text-sm text-terminal-text-secondary">
                       Remember: Your private key is stored in this browser. If you clear browser data or switch devices, 
-                      you'll need your backup to restore access.
+                      you&apos;ll need your backup to restore access.
                     </p>
                   </div>
                 </div>
@@ -339,4 +339,5 @@ export function WalletOnboardingModal({ wallet, onClose, onComplete }: WalletOnb
     </div>
   )
 }
+
 

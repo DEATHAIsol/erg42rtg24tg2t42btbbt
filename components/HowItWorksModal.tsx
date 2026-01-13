@@ -91,11 +91,12 @@ export function HowItWorksModal({ isOpen, onClose }: HowItWorksModalProps) {
             onClick={onClose}
             className="w-full terminal-button-primary px-6 py-3 text-lg font-semibold rounded-lg hover:bg-blue-600 transition-colors"
           >
-            I'm ready to trade
+            I&apos;m ready to trade
           </button>
         </div>
       </div>
     </div>
   )
 }
+
 

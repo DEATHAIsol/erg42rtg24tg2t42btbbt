@@ -124,7 +124,7 @@ export function Sidebar({ isOpen, onToggle, filters, onFiltersChange }: SidebarP
                           : 'bg-terminal-bg border border-terminal-border text-terminal-text-secondary hover:border-terminal-accent hover:bg-terminal-border/50 hover:scale-105'
                       }`}
                     >
-                      {categoryLabels[category] || category}
+                      {categoryLabels[category as keyof typeof categoryLabels] || category}
                     </button>
                   )
                 })}
@@ -224,7 +224,7 @@ export function Sidebar({ isOpen, onToggle, filters, onFiltersChange }: SidebarP
                       key={tag}
                       className="px-2.5 py-1 bg-terminal-accent/20 text-terminal-accent rounded-md text-xs font-medium border border-terminal-accent/30"
                     >
-                      {categoryLabels[tag] || tag}
+                      {categoryLabels[tag as keyof typeof categoryLabels] || tag}
                     </span>
                   ))}
                   {filters.minVolume > 0 && (
