@@ -6,6 +6,12 @@ import { TrendingUp, TrendingDown, Layers, Zap, Target, DollarSign, AlertCircle 
 import { useCustodialWallet } from '@/lib/useCustodialWallet'
 import { getOrderBook, getBestPrice, placeOrder, OrderType, Side } from '@/lib/clob-client'
 import { placePaperOrder, getPaperTradingState } from '@/lib/paper-trading'
+import { useToast } from './Toast'
+import { playSuccessSound } from '@/lib/sounds'
+
+// Trading fees
+const TRADING_FEE_PERCENT = 0.02 // 2% trading fee
+const SITE_FEE_SOL = 0.01 // 0.01 SOL site fee per trade
 
 interface TradingPanelProps {
   market: PolymarketMarket
@@ -13,6 +19,7 @@ interface TradingPanelProps {
 }
 
 export function TradingPanel({ market, priceData }: TradingPanelProps) {
+  const toast = useToast()
   const { publicKey, connected } = useCustodialWallet()
   const address = publicKey?.toString() || null
   const isConnected = connected
@@ -27,6 +34,30 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
   const [loading, setLoading] = useState(false)
   const [loadingOrderBook, setLoadingOrderBook] = useState(false)
   const [paperBalance, setPaperBalance] = useState(0)
+  const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in USD
+
+  // Fetch SOL price
+  useEffect(() => {
+    const fetchSolPrice = async () => {
+      try {
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'
+        )
+        if (response.ok) {
+          const data = await response.json()
+          if (data.solana?.usd) {
+            setSolPrice(data.solana.usd)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching SOL price:', error)
+      }
+    }
+    
+    fetchSolPrice()
+    const interval = setInterval(fetchSolPrice, 60000) // Refresh every minute
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     // Always load order book when market changes
@@ -151,17 +182,17 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
 
   const handleTrade = async () => {
     if (!isConnected || !address) {
-      alert('Please connect your wallet to trade')
+      toast.showWarning('Please connect your wallet to trade')
       return
     }
 
     if (!amount || parseFloat(amount) <= 0) {
-      alert('Please enter a valid amount')
+      toast.showWarning('Please enter a valid amount')
       return
     }
 
     if (orderType === 'limit' && (!limitPrice || parseFloat(limitPrice) <= 0)) {
-      alert('Please enter a valid limit price')
+      toast.showWarning('Please enter a valid limit price')
       return
     }
 
@@ -187,7 +218,7 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
       )
 
       if (!result.success) {
-        alert(result.error || 'Failed to place order')
+        toast.showError(result.error || 'Failed to place order')
         return
       }
 
@@ -196,9 +227,11 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
       setPaperBalance(state.balance)
 
       if (result.position) {
-        alert(`Position opened! Entry price: ${(price * 100).toFixed(2)}¢`)
+        playSuccessSound()
+        toast.showSuccess(`Position opened! Entry price: ${(price * 100).toFixed(2)}¢`)
       } else if (result.order) {
-        alert(`Limit order placed! Will execute at ${(price * 100).toFixed(2)}¢`)
+        playSuccessSound()
+        toast.showSuccess(`Limit order placed! Will execute at ${(price * 100).toFixed(2)}¢`)
       }
 
       setAmount('')
@@ -208,7 +241,7 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
       window.dispatchEvent(new CustomEvent('paper-trading-updated'))
     } catch (error: any) {
       console.error('Error placing order:', error)
-      alert(`Failed to place order: ${error.message || 'Unknown error'}`)
+      toast.showError(`Failed to place order: ${error.message || 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -223,17 +256,41 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
       question: market.question,
     })
     localStorage.setItem('parlay-legs', JSON.stringify(parlays))
-    alert('Added to parlay! Go to Parlays page to view.')
+    playSuccessSound()
+    toast.showSuccess('Added to parlay! Go to Parlays page to view.')
   }
 
-  const positionSize = amount ? parseFloat(amount) * leverage : 0
-  // With leverage: you buy (amount * leverage) worth of shares at currentPrice
-  // Number of shares = (amount * leverage) / currentPrice
-  // If market resolves to Yes (price = $1), payout = (amount * leverage) / currentPrice
-  const potentialPayout = amount && currentPrice > 0 && currentPrice < 1 
-    ? (parseFloat(amount) * leverage) / currentPrice 
+  // Margin = what you put up (your actual cost)
+  const margin = amount ? parseFloat(amount) : 0
+  // Position size = leveraged exposure
+  const positionSize = margin * leverage
+  // Borrowed amount (what you owe back)
+  const borrowed = positionSize - margin
+  
+  // With leverage: you buy (margin * leverage) worth of shares at currentPrice
+  // Gross value if win = positionSize / currentPrice
+  const grossValue = margin > 0 && currentPrice > 0 && currentPrice < 1 
+    ? positionSize / currentPrice 
     : 0
-  const potentialProfit = potentialPayout - (amount ? parseFloat(amount) : 0)
+  
+  // Fee calculations - fees are on the MARGIN (your cost), not borrowed amount
+  const tradingFee = margin * TRADING_FEE_PERCENT
+  const siteFee = SITE_FEE_SOL
+  const totalFees = tradingFee + siteFee
+  
+  // Total cost = margin + fees
+  const totalCost = margin + totalFees
+  
+  // Payout if win = gross value - borrowed amount (pay back the loan)
+  const potentialPayout = grossValue - borrowed
+  
+  // Profit = payout - margin - fees
+  const potentialProfit = potentialPayout - totalCost
+  
+  // USD conversions
+  const marginUsd = margin * solPrice
+  const totalCostUsd = totalCost * solPrice
+  const potentialPayoutUsd = potentialPayout * solPrice
 
   return (
     <div className="flex flex-col h-full bg-terminal-surface">
@@ -245,8 +302,9 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
             <p className="text-xs text-terminal-text-muted line-clamp-1">{market.question}</p>
           </div>
           <div className="text-right">
-            <div className="text-xs text-terminal-text-muted mb-0.5">Paper Balance</div>
+            <div className="text-xs text-terminal-text-muted mb-0.5">Balance</div>
             <div className="text-sm font-bold text-terminal-accent">{paperBalance.toFixed(4)} SOL</div>
+            <div className="text-xs text-terminal-text-muted">${(paperBalance * solPrice).toFixed(2)}</div>
           </div>
         </div>
       </div>
@@ -500,38 +558,37 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
 
           {/* Trade Summary */}
           {amount && parseFloat(amount) > 0 && (
-            <div className="p-4 bg-terminal-bg rounded-lg border border-terminal-border space-y-3">
-              <h4 className="text-xs font-semibold text-terminal-text-secondary uppercase tracking-wide mb-3">Trade Summary</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+            <div className="p-4 bg-terminal-bg rounded-lg border border-terminal-border">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-semibold text-terminal-text-secondary uppercase tracking-wide">Summary</h4>
+                <span className="text-xs text-terminal-text-muted">SOL ≈ ${solPrice.toFixed(2)}</span>
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
                   <span className="text-terminal-text-secondary">Cost</span>
-                  <span className="font-semibold">{parseFloat(amount).toFixed(4)} SOL</span>
+                  <span className="font-medium">{margin.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${marginUsd.toFixed(2)}</span></span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-terminal-text-secondary">Leverage</span>
-                  <span className="font-semibold">{leverage}x</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-terminal-text-secondary">Position Size</span>
-                  <span className="font-semibold text-terminal-accent">{positionSize.toFixed(4)} SOL</span>
-                </div>
-                <div className="pt-2 border-t border-terminal-border space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-terminal-text-secondary">Potential Payout</span>
-                    <span className="text-lg font-bold text-terminal-success">{potentialPayout.toFixed(4)} SOL</span>
+                {leverage > 1 && (
+                  <div className="flex justify-between">
+                    <span className="text-terminal-text-secondary">Position ({leverage}x)</span>
+                    <span className="font-medium text-terminal-accent">{positionSize.toFixed(4)} SOL</span>
                   </div>
-                  {potentialProfit > 0 && (
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-terminal-text-muted">Potential Profit</span>
-                      <span className="font-semibold text-terminal-success">+{potentialProfit.toFixed(4)} SOL</span>
-                    </div>
-                  )}
-                  {potentialProfit < 0 && (
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-terminal-text-muted">Max Loss</span>
-                      <span className="font-semibold text-terminal-danger">{Math.abs(potentialProfit).toFixed(4)} SOL</span>
-                    </div>
-                  )}
+                )}
+                <div className="flex justify-between">
+                  <span className="text-terminal-text-secondary">Fees</span>
+                  <span className="font-medium text-terminal-warning">{totalFees.toFixed(4)} SOL</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-terminal-border/50">
+                  <span className="text-terminal-text-primary font-medium">Total</span>
+                  <span className="font-bold">{totalCost.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${totalCostUsd.toFixed(2)}</span></span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-terminal-border/50">
+                  <span className="text-terminal-text-secondary">Payout if Win</span>
+                  <span className="font-bold text-terminal-success">{potentialPayout.toFixed(4)} SOL <span className="text-xs">${potentialPayoutUsd.toFixed(2)}</span></span>
+                </div>
+                <div className="flex justify-between text-xs text-terminal-text-muted">
+                  <span>ROI</span>
+                  <span className="text-terminal-success font-medium">{totalCost > 0 ? ((potentialProfit / totalCost) * 100).toFixed(1) : 0}%</span>
                 </div>
               </div>
             </div>
@@ -574,10 +631,6 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
             </div>
           )}
           
-          <div className="p-3 bg-terminal-accent/10 border border-terminal-accent/30 rounded-lg flex items-center gap-2 text-xs text-terminal-accent">
-            <AlertCircle size={16} />
-            <span>Paper Trading Mode - All trades are simulated</span>
-          </div>
         </div>
       </div>
     </div>

@@ -6,8 +6,10 @@ import { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/
 import { getOrCreateWallet, getWallet, getPublicKey, clearWallet } from '@/lib/custodial-wallet'
 import { DepositModal } from './DepositModal'
 import { WalletOnboardingModal } from './WalletOnboardingModal'
+import { useConfirm } from './ConfirmModal'
 
 export function WalletButton() {
+  const { confirm } = useConfirm()
   const [wallet, setWallet] = useState<ReturnType<typeof getWallet>>(null)
   const [balance, setBalance] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -141,8 +143,16 @@ export function WalletButton() {
   }
 
 
-  const handleDisconnect = () => {
-    if (confirm('Are you sure you want to clear your wallet? This will remove it from this browser. Make sure you have exported it first!')) {
+  const handleDisconnect = async () => {
+    const confirmed = await confirm({
+      title: 'Clear Wallet',
+      message: 'Are you sure you want to clear your wallet?\n\nThis will remove it from this browser. Make sure you have exported your private key first!',
+      confirmText: 'Clear Wallet',
+      cancelText: 'Cancel',
+      type: 'danger',
+    })
+    
+    if (confirmed) {
       clearWallet()
       setWallet(null)
       setBalance(null)

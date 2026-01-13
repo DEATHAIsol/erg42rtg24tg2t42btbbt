@@ -8,37 +8,23 @@
 import { Pool } from 'pg'
 import { PolymarketMarket } from './polymarket'
 
-// Use global to persist pool across hot reloads in development
-declare global {
-  var pgPool: Pool | undefined
-}
+// Initialize PostgreSQL connection pool
+let pool: Pool | null = null
 
 function getPool(): Pool {
-  // Reuse existing pool if available (survives hot reloads)
-  if (global.pgPool) {
-    return global.pgPool
+  if (!pool) {
+    const connectionString = process.env.DATABASE_URL
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is required')
+    }
+    pool = new Pool({
+      connectionString,
+      // Supabase requires SSL in production
+      ssl: process.env.NODE_ENV === 'production' || connectionString.includes('supabase.co') 
+        ? { rejectUnauthorized: false } 
+        : false,
+    })
   }
-
-  const connectionString = process.env.DATABASE_URL
-  if (!connectionString) {
-    throw new Error('DATABASE_URL environment variable is required')
-  }
-
-  const pool = new Pool({
-    connectionString,
-    // Supabase requires SSL in production
-    ssl: process.env.NODE_ENV === 'production' || connectionString.includes('supabase.co') 
-      ? { rejectUnauthorized: false } 
-      : false,
-    // Limit connections for Supabase session mode (free tier has low limits)
-    max: 3, // Maximum 3 connections in pool
-    idleTimeoutMillis: 30000, // Close idle connections after 30s
-    connectionTimeoutMillis: 10000, // Timeout after 10s trying to connect
-  })
-
-  // Store in global to survive hot reloads
-  global.pgPool = pool
-
   return pool
 }
 
@@ -373,7 +359,10 @@ export const dbOperations = {
   // Clear all markets
   async clearAll() {
     const db = getPool()
-    await db.query('TRUNCATE TABLE markets')
+    // Extend timeout for large table operations
+    await db.query('SET statement_timeout = 300000') // 5 minutes
+    await db.query('DELETE FROM markets')
+    await db.query('SET statement_timeout = DEFAULT')
   },
 
   // Update prices and order book for a market

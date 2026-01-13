@@ -11,6 +11,11 @@ import { checkParlayStatus, getParlayStats, getPlacedParlays as getPlacedParlays
 import { getPaperTradingState } from '@/lib/paper-trading'
 import { useRouter } from 'next/navigation'
 import { getBestPrice } from '@/lib/clob-client'
+import { useToast } from '@/components/Toast'
+import { playSuccessSound } from '@/lib/sounds'
+
+// Site fee only for parlays (no leverage = no liquidity fee)
+const SITE_FEE_SOL = 0.01 // 0.01 SOL site fee per parlay
 
 interface ParlayLeg {
   market: PolymarketMarket
@@ -23,6 +28,7 @@ interface ParlayLeg {
 
 export default function ParlaysPage() {
   const router = useRouter()
+  const toast = useToast()
   const { connected } = useCustodialWallet()
   const isConnected = connected
   const [markets, setMarkets] = useState<PolymarketMarket[]>([])
@@ -48,6 +54,7 @@ export default function ParlaysPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmedConsent, setConfirmedConsent] = useState(false)
   const [expandedParlays, setExpandedParlays] = useState<Set<string>>(new Set())
+  const [solPrice, setSolPrice] = useState<number>(180) // SOL price in USD
 
   useEffect(() => {
     loadMarkets()
@@ -81,6 +88,29 @@ export default function ParlaysPage() {
       window.removeEventListener('parlays-updated', handleParlayUpdate)
       clearInterval(interval)
     }
+  }, [])
+
+  // Fetch SOL price
+  useEffect(() => {
+    const fetchSolPrice = async () => {
+      try {
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'
+        )
+        if (response.ok) {
+          const data = await response.json()
+          if (data.solana?.usd) {
+            setSolPrice(data.solana.usd)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching SOL price:', error)
+      }
+    }
+    
+    fetchSolPrice()
+    const interval = setInterval(fetchSolPrice, 60000)
+    return () => clearInterval(interval)
   }, [])
 
   const loadPlacedParlays = async () => {
@@ -128,7 +158,7 @@ export default function ParlaysPage() {
       })))
     } catch (error) {
       console.error('Error updating parlay values:', error)
-      alert('Failed to update parlay values. Please try again.')
+      toast.showError('Failed to update parlay values. Please try again.')
     } finally {
       setUpdatingValues(false)
     }
@@ -178,14 +208,15 @@ export default function ParlaysPage() {
       
       if (updated.status !== parlay.status) {
         if (updated.status === 'won') {
-          alert(`🎉 Parlay won! Payout: ${updated.actualPayout?.toFixed(4)} SOL`)
+          playSuccessSound()
+          toast.showSuccess(`🎉 Parlay won! Payout: ${updated.actualPayout?.toFixed(4)} SOL`)
         } else if (updated.status === 'lost') {
-          alert('❌ Parlay lost. One or more legs did not resolve correctly.')
+          toast.showError('❌ Parlay lost. One or more legs did not resolve correctly.')
         }
       }
     } catch (error) {
       console.error('Error checking parlay status:', error)
-      alert('Failed to check parlay status')
+      toast.showError('Failed to check parlay status')
     } finally {
       setCheckingParlays(false)
     }
@@ -311,7 +342,7 @@ export default function ParlaysPage() {
 
   const addLeg = async (market: PolymarketMarket, outcome: 'Yes' | 'No') => {
     if (parlayLegs.some((leg) => leg.market.id === market.id)) {
-      alert('This market is already in your parlay')
+      toast.showWarning('This market is already in your parlay')
       return
     }
     
@@ -397,7 +428,7 @@ export default function ParlaysPage() {
     
     // Validate price before adding - must be in decimal format (0-1)
     if (isNaN(price) || price <= 0 || price >= 1) {
-      alert(`Unable to fetch valid price for this market. Got: ${price}. Price must be between 0 and 1 (decimal format). Please try again.`)
+      toast.showError(`Unable to fetch valid price for this market. Got: ${price}. Price must be between 0 and 1 (decimal format). Please try again.`)
       return
     }
     
@@ -431,7 +462,23 @@ export default function ParlaysPage() {
   }
 
   const combinedOdds = calculateParlayOdds()
-  const potentialPayout = stakeAmount && combinedOdds > 0 ? calculatePayout(parseFloat(stakeAmount), combinedOdds) : 0
+  const stake = stakeAmount ? parseFloat(stakeAmount) : 0
+  const grossPayout = stake > 0 && combinedOdds > 0 ? calculatePayout(stake, combinedOdds) : 0
+  
+  // Fee calculations - parlays only have site fee (no leverage = no liquidity fee)
+  const siteFee = SITE_FEE_SOL
+  const totalFees = siteFee
+  const totalCost = stake + totalFees
+  
+  // Net payout after fees
+  const potentialPayout = grossPayout
+  const potentialProfit = potentialPayout - totalCost
+  
+  // USD conversions
+  const stakeUsd = stake * solPrice
+  const totalCostUsd = totalCost * solPrice
+  const potentialPayoutUsd = potentialPayout * solPrice
+  
   const canPlaceParlay = parlayLegs.length >= 2 && isConnected && stakeAmount && parseFloat(stakeAmount) > 0
 
   return (
@@ -908,21 +955,34 @@ export default function ParlaysPage() {
                       </div>
 
                       {stakeAmount && parseFloat(stakeAmount) > 0 && (
-                        <div className="bg-terminal-success/10 border border-terminal-success/30 rounded-lg p-4">
+                        <div className="bg-terminal-bg border border-terminal-border rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <div className="text-xs text-terminal-text-secondary mb-1 uppercase tracking-wide">Potential Payout</div>
-                              <div className="text-3xl font-bold text-terminal-success">
-                                {potentialPayout.toFixed(4)} SOL
+                            <h4 className="text-xs font-semibold text-terminal-text-secondary uppercase tracking-wide">Summary</h4>
+                            <span className="text-xs text-terminal-text-muted">SOL ≈ ${solPrice.toFixed(2)}</span>
                               </div>
+                          <div className="space-y-1.5 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-terminal-text-secondary">Stake</span>
+                              <span className="font-medium">{stake.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${stakeUsd.toFixed(2)}</span></span>
                             </div>
-                            <ArrowRight className="text-terminal-success" size={24} />
+                            <div className="flex justify-between">
+                              <span className="text-terminal-text-secondary">Fees</span>
+                              <span className="font-medium text-terminal-warning">{totalFees.toFixed(4)} SOL</span>
                           </div>
-                          <div className="pt-3 border-t border-terminal-success/20 text-sm">
-                            <span className="text-terminal-text-secondary">Potential Profit: </span>
-                            <span className="text-terminal-success font-semibold">
-                              {(potentialPayout - parseFloat(stakeAmount)) > 0 ? '+' : ''}{(potentialPayout - parseFloat(stakeAmount)).toFixed(4)} SOL
+                            <div className="flex justify-between pt-2 border-t border-terminal-border/50">
+                              <span className="text-terminal-text-primary font-medium">Total Cost</span>
+                              <span className="font-bold">{totalCost.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${totalCostUsd.toFixed(2)}</span></span>
+                            </div>
+                            <div className="flex justify-between pt-2 border-t border-terminal-border/50">
+                              <span className="text-terminal-text-secondary">Payout if Win</span>
+                              <span className="font-bold text-terminal-success">{potentialPayout.toFixed(4)} SOL <span className="text-xs">${potentialPayoutUsd.toFixed(2)}</span></span>
+                            </div>
+                            <div className="flex justify-between text-xs text-terminal-text-muted">
+                              <span>ROI</span>
+                              <span className={`font-medium ${potentialProfit >= 0 ? 'text-terminal-success' : 'text-terminal-danger'}`}>
+                                {totalCost > 0 ? ((potentialProfit / totalCost) * 100).toFixed(1) : 0}%
                             </span>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -946,11 +1006,11 @@ export default function ParlaysPage() {
                     <button
                       onClick={async () => {
                         if (!isConnected) {
-                          alert('Please connect your wallet to place a parlay')
+                          toast.showWarning('Please connect your wallet to place a parlay')
                           return
                         }
                         if (!canPlaceParlay) {
-                          alert('Please enter a valid stake amount')
+                          toast.showWarning('Please enter a valid stake amount')
                           return
                         }
                         // Show confirmation modal
@@ -1035,7 +1095,7 @@ export default function ParlaysPage() {
                       className="mt-1 w-4 h-4 rounded border-terminal-border bg-terminal-surface text-terminal-accent focus:ring-terminal-accent focus:ring-2"
                     />
                     <label htmlFor="consent-checkbox" className="text-sm text-terminal-text-secondary cursor-pointer flex-1">
-                      I acknowledge and consent to the 2.5% daily liquidity provider fee and the 0.02 SOL site fee
+                      I acknowledge and consent to the 0.01 SOL site fee
                     </label>
                   </div>
                 </div>
@@ -1051,7 +1111,7 @@ export default function ParlaysPage() {
                   <button
                     onClick={async () => {
                       if (!confirmedConsent) {
-                        alert('Please acknowledge and consent to the fees')
+                        toast.showWarning('Please acknowledge and consent to the fees')
                         return
                       }
                       
@@ -1108,7 +1168,7 @@ export default function ParlaysPage() {
                           
                           // Validate combined odds
                           if (updatedCombinedOdds <= 0 || updatedCombinedOdds >= 1) {
-                            alert('Invalid combined odds calculated. Please try again.')
+                            toast.showError('Invalid combined odds calculated. Please try again.')
                             return
                           }
                           
@@ -1130,11 +1190,12 @@ export default function ParlaysPage() {
                           // Save parlay using management utility
                           savePlacedParlay(newParlay)
                           
-                          // Deduct stake from paper trading balance
+                          // Deduct total cost (stake + site fee) from balance
                           const state = getPaperTradingState()
-                        const totalDeduction = parseFloat(stakeAmount) + 0.02 // Stake + site fee
+                          const stakeVal = parseFloat(stakeAmount)
+                          const totalDeduction = stakeVal + SITE_FEE_SOL
                         if (state.balance < totalDeduction) {
-                          alert(`Insufficient balance. Need ${totalDeduction.toFixed(4)} SOL (${parseFloat(stakeAmount).toFixed(4)} stake + 0.02 site fee), have ${state.balance.toFixed(4)} SOL`)
+                          toast.showError(`Insufficient balance. Need ${totalDeduction.toFixed(4)} SOL (${stakeVal.toFixed(4)} stake + ${SITE_FEE_SOL} site fee), have ${state.balance.toFixed(4)} SOL`)
                             return
                           }
                         state.balance -= totalDeduction
@@ -1148,10 +1209,11 @@ export default function ParlaysPage() {
                           setParlayLegs([])
                           setStakeAmount('')
                           
-                          alert(`Parlay placed successfully! Entry odds: ${(updatedCombinedOdds * 100).toFixed(2)}¢, Potential payout: ${updatedPotentialPayout.toFixed(4)} SOL`)
+                          playSuccessSound()
+                          toast.showSuccess(`Parlay placed successfully! Entry odds: ${(updatedCombinedOdds * 100).toFixed(2)}¢, Potential payout: ${updatedPotentialPayout.toFixed(4)} SOL`)
                         } catch (error) {
                           console.error('Error placing parlay:', error)
-                          alert('Error placing parlay. Please try again.')
+                          toast.showError('Error placing parlay. Please try again.')
                         }
                       }}
                     disabled={!confirmedConsent}
@@ -1321,7 +1383,7 @@ export default function ParlaysPage() {
                                   await addLeg(market, 'Yes')
                                 } catch (error) {
                                   console.error('Error adding leg:', error)
-                                  alert('Failed to add market to parlay. Please try again.')
+                                  toast.showError('Failed to add market to parlay. Please try again.')
                                 }
                               }}
                               className="flex-1 py-2.5 px-3 bg-terminal-success/10 border border-terminal-success/30 rounded-lg text-sm font-semibold text-terminal-success hover:bg-terminal-success/20 hover:border-terminal-success transition-all flex items-center justify-center gap-2"
@@ -1336,7 +1398,7 @@ export default function ParlaysPage() {
                                   await addLeg(market, 'No')
                                 } catch (error) {
                                   console.error('Error adding leg:', error)
-                                  alert('Failed to add market to parlay. Please try again.')
+                                  toast.showError('Failed to add market to parlay. Please try again.')
                                 }
                               }}
                               className="flex-1 py-2.5 px-3 bg-terminal-danger/10 border border-terminal-danger/30 rounded-lg text-sm font-semibold text-terminal-danger hover:bg-terminal-danger/20 hover:border-terminal-danger transition-all flex items-center justify-center gap-2"

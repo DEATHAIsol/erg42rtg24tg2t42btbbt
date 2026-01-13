@@ -16,6 +16,9 @@ import {
   PaperPosition,
   PaperOrder
 } from '@/lib/paper-trading'
+import { useToast } from '@/components/Toast'
+import { useConfirm } from '@/components/ConfirmModal'
+import { playCloseTradeSound } from '@/lib/sounds'
 
 interface PositionWithPnL extends PaperPosition {
   currentPnL: number
@@ -33,6 +36,8 @@ interface PositionWithPnL extends PaperPosition {
 
 export default function PortfolioPage() {
   const router = useRouter()
+  const toast = useToast()
+  const { confirm } = useConfirm()
   const { connected } = useCustodialWallet()
   const isConnected = connected
   const [positions, setPositions] = useState<PositionWithPnL[]>([])
@@ -234,16 +239,23 @@ export default function PortfolioPage() {
     const position = positions.find(p => p.id === positionId)
     if (!position) return
     
-    if (!confirm(`Close position? P&L: ${position.currentPnL > 0 ? '+' : ''}${position.currentPnL.toFixed(4)} SOL`)) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Close Position',
+      message: `Are you sure you want to close this position?\n\nP&L: ${position.currentPnL > 0 ? '+' : ''}${position.currentPnL.toFixed(4)} SOL`,
+      confirmText: 'Close Position',
+      cancelText: 'Cancel',
+      type: position.currentPnL >= 0 ? 'success' : 'warning',
+    })
+    
+    if (!confirmed) return
     
     const result = closePosition(positionId, position.currentPrice)
     if (result.success) {
+      playCloseTradeSound()
       await loadPortfolio(true)
       window.dispatchEvent(new CustomEvent('paper-trading-updated'))
     } else {
-      alert(result.error || 'Failed to close position')
+      toast.showError(result.error || 'Failed to close position')
     }
   }
 
@@ -254,7 +266,7 @@ export default function PortfolioPage() {
       loadPortfolio(true)
       window.dispatchEvent(new CustomEvent('paper-trading-updated'))
     } else {
-      alert(result.error || 'Failed to cancel order')
+      toast.showError(result.error || 'Failed to cancel order')
     }
   }
 
@@ -275,7 +287,7 @@ export default function PortfolioPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-3xl font-bold mb-1">Portfolio</h1>
-                <p className="text-sm text-terminal-text-secondary">Track your paper trading positions and performance</p>
+                <p className="text-sm text-terminal-text-secondary">Track your positions and performance</p>
               </div>
               <button
                 onClick={() => loadPortfolio(true)}

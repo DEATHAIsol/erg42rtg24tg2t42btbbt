@@ -237,8 +237,10 @@ export async function updateAllParlayCurrentValues(parlays: PlacedParlay[]): Pro
       }
 
       // Calculate current value and PnL
-      const currentValue = currentCombinedOdds > 0 
-        ? parlay.stakeAmount / currentCombinedOdds 
+      // Current Value = Stake × (Current Odds / Entry Odds)
+      // This reflects what the position is worth NOW, not potential future payout
+      const currentValue = parlay.combinedOdds > 0 
+        ? parlay.stakeAmount * (currentCombinedOdds / parlay.combinedOdds)
         : parlay.stakeAmount
       const currentPnL = currentValue - parlay.stakeAmount
 

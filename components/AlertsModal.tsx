@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Plus, Trash2, Bell, BellOff } from 'lucide-react'
+import { useToast } from './Toast'
 
 interface MarketAlert {
   id: string
@@ -19,6 +20,7 @@ interface AlertsModalProps {
 }
 
 export function AlertsModal({ isOpen, onClose }: AlertsModalProps) {
+  const toast = useToast()
   const [alerts, setAlerts] = useState<MarketAlert[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [newAlert, setNewAlert] = useState({
@@ -47,7 +49,7 @@ export function AlertsModal({ isOpen, onClose }: AlertsModalProps) {
 
   const handleAddAlert = () => {
     if (!newAlert.marketId || !newAlert.marketQuestion || newAlert.value <= 0) {
-      window.alert('Please fill in all fields')
+      toast.showWarning('Please fill in all fields')
       return
     }
 
