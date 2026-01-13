@@ -1,0 +1,233 @@
+---
+title: Placing Orders
+description: Step-by-step guide to placing buy and sell orders
+---
+
+This guide walks you through the process of placing orders on ProBioMarkets, from selecting a market to executing your trade.
+
+## Prerequisites
+
+Before placing an order, ensure you have:
+
+- ✅ **Active wallet** with sufficient balance
+- ✅ **Selected a market** you want to trade
+- ✅ **Decided on your position** (Yes or No, Buy or Sell)
+
+## Order Placement Process
+
+### Step 1: Access the Trading Panel
+
+You can access the trading panel from:
+
+1. **Market Page**: Click any market to view its dedicated page
+2. **Markets List**: Select a market to see details in the right sidebar
+3. **Portfolio**: Click on an existing position to manage it
+
+### Step 2: Select Outcome
+
+Choose which outcome you want to trade:
+
+<CardGroup cols={2}>
+  <Card title="Yes" icon="trending-up">
+    Buy if you believe the event will happen. Sell if you believe it won't.
+  </Card>
+  <Card title="No" icon="trending-down">
+    Buy if you believe the event won't happen. Sell if you believe it will.
+  </Card>
+</CardGroup>
+
+The selected outcome determines which shares you're trading.
+
+### Step 3: Choose Side
+
+Decide whether to **Buy** or **Sell**:
+
+- **Buy**: You're betting the outcome will be correct
+- **Sell**: You're betting the outcome will be incorrect (shorting)
+
+<Info>
+  Selling is equivalent to buying the opposite outcome. Selling "Yes" is the same as buying "No".
+</Info>
+
+### Step 4: Set Amount
+
+Enter the amount you want to invest:
+
+- **Minimum**: Usually $1.00 USDC
+- **Maximum**: Your available balance
+- **Quick buttons**: Use preset amounts (10, 25, 50, 100)
+
+<Warning>
+  Remember that leverage multiplies your position size. A $10 trade with 5x leverage controls $50 worth of shares.
+</Warning>
+
+### Step 5: Configure Leverage (Optional)
+
+Set your leverage multiplier:
+
+- **1x**: No leverage (recommended for beginners)
+- **2x-5x**: Moderate leverage
+- **6x-10x**: High leverage (higher risk)
+
+<Note>
+  Higher leverage increases both potential profits and losses. Start conservatively.
+</Note>
+
+### Step 6: Select Order Type
+
+Choose between Market and Limit orders:
+
+#### Market Order
+
+- Executes immediately
+- Uses best available price
+- May have slight slippage
+- Best for: Quick execution
+
+#### Limit Order
+
+- Executes only at your price or better
+- More price control
+- May not fill if price doesn't reach limit
+- Best for: Specific entry points
+
+### Step 7: Review Order Summary
+
+Before placing, review:
+
+- **Outcome**: Yes or No
+- **Side**: Buy or Sell
+- **Amount**: Your investment
+- **Leverage**: Position multiplier
+- **Current Price**: Market price
+- **Potential Payout**: If you win
+- **Potential Profit**: Net profit after costs
+- **Max Loss**: Maximum possible loss
+
+### Step 8: Execute Order
+
+Click **"Place Order"** to execute:
+
+1. Order is submitted to the order book
+2. If market order: Executes immediately
+3. If limit order: Waits for matching price
+4. Position appears in your portfolio
+
+## Order Confirmation
+
+After placing an order, you'll see:
+
+- ✅ **Confirmation message**
+- 📊 **Updated position** in portfolio
+- 💰 **Updated balance**
+- 📈 **Real-time P&L** tracking
+
+## Managing Open Orders
+
+### Viewing Orders
+
+Check your open orders:
+
+1. Go to **Portfolio** page
+2. Click **"Open Orders"** tab
+3. View pending limit orders
+
+### Canceling Orders
+
+To cancel a pending limit order:
+
+1. Find the order in your portfolio
+2. Click **"Cancel"** button
+3. Confirm cancellation
+4. Funds are returned to your balance
+
+## Order Execution
+
+### Market Order Execution
+
+Market orders execute in this order:
+
+1. **Best available price** is selected
+2. **Order book** is matched
+3. **Shares** are allocated
+4. **Position** is created
+5. **Balance** is updated
+
+### Limit Order Execution
+
+Limit orders wait until:
+
+1. **Price reaches** your limit
+2. **Order matches** with opposite side
+3. **Trade executes** automatically
+4. **Position** is created
+
+<Info>
+  Limit orders remain active until they fill, you cancel them, or the market closes.
+</Info>
+
+## Common Scenarios
+
+### Scenario 1: Quick Trade
+
+**Goal**: Enter position quickly
+
+1. Select market
+2. Choose outcome (Yes/No)
+3. Select **Market** order
+4. Enter amount
+5. Click "Place Order"
+
+**Result**: Position opened immediately
+
+### Scenario 2: Specific Entry Price
+
+**Goal**: Enter at a specific price
+
+1. Select market
+2. Choose outcome
+3. Select **Limit** order
+4. Set limit price
+5. Enter amount
+6. Click "Place Order"
+
+**Result**: Order waits for price to reach limit
+
+### Scenario 3: Leveraged Position
+
+**Goal**: Amplify position size
+
+1. Select market and outcome
+2. Enter base amount (e.g., $10)
+3. Set leverage (e.g., 5x)
+4. Review potential payout
+5. Place order
+
+**Result**: $10 controls $50 position
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Order not executing">
+    - Check if you have sufficient balance
+    - Verify order type (limit orders may not fill immediately)
+    - Check if market is still active
+  </Accordion>
+  <Accordion title="Insufficient balance">
+    - Deposit more funds to your wallet
+    - Reduce order amount
+    - Close existing positions to free up capital
+  </Accordion>
+  <Accordion title="Price moved before execution">
+    - This is normal for market orders (slippage)
+    - Use limit orders for price control
+    - Check order book depth before trading
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+- Learn about [order types](/trading/order-types) in detail
+- Understand [leverage](/trading/leverage) and risk management
+- Explore [portfolio management](/portfolio/managing-positions)
+

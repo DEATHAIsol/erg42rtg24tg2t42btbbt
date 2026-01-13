@@ -1,0 +1,188 @@
+---
+title: Order Types
+description: Understanding market orders vs limit orders
+---
+
+ProBioMarkets supports two main order types: Market orders and Limit orders. Understanding when to use each is crucial for effective trading.
+
+## Market Orders
+
+Market orders execute immediately at the best available price in the order book.
+
+### Characteristics
+
+- ✅ **Instant execution** - Fills immediately
+- ⚡ **Fast** - No waiting for price
+- ⚠️ **Price uncertainty** - May experience slippage
+- 💰 **Best available price** - Takes current market price
+
+### When to Use
+
+Market orders are best for:
+
+- **Quick entry/exit** when speed matters
+- **Liquid markets** with tight spreads
+- **Small positions** where slippage is minimal
+- **Time-sensitive** trades
+
+### Example
+
+```
+Current Yes Price: 50¢
+You place: Market Buy for $10
+Result: Executes immediately at ~50¢
+Shares received: ~20 shares
+```
+
+## Limit Orders
+
+Limit orders only execute at your specified price or better.
+
+### Characteristics
+
+- ✅ **Price control** - You set exact price
+- ⏳ **May not fill** - Waits for matching price
+- 🎯 **Precise entry** - Enter at desired price
+- 💡 **Better prices** - Can get better than market
+
+### When to Use
+
+Limit orders are best for:
+
+- **Specific entry points** you've identified
+- **Price-sensitive** trades
+- **Illiquid markets** where you want price control
+- **Patient trading** strategies
+
+### Example
+
+```
+Current Yes Price: 50¢
+You place: Limit Buy at 45¢ for $10
+Result: Waits until price drops to 45¢
+If price reaches 45¢: Executes, you get ~22 shares
+If price never reaches: Order doesn't fill
+```
+
+## Comparing Order Types
+
+<CardGroup cols={2}>
+  <Card title="Market Orders" icon="bolt">
+    **Pros:**
+    - Instant execution
+    - Guaranteed fill
+    - Simple to use
+    
+    **Cons:**
+    - Price uncertainty
+    - Possible slippage
+    - No price control
+  </Card>
+  <Card title="Limit Orders" icon="target">
+    **Pros:**
+    - Price control
+    - Better prices possible
+    - No slippage
+    
+    **Cons:**
+    - May not fill
+    - Requires patience
+    - More complex
+  </Card>
+</CardGroup>
+
+## Order Execution
+
+### Market Order Execution
+
+1. Order submitted
+2. System finds best available price
+3. Matches with order book
+4. Executes immediately
+5. Position created
+
+### Limit Order Execution
+
+1. Order submitted
+2. Added to order book
+3. Waits for matching price
+4. Executes when price reached
+5. Position created
+
+<Info>
+  Limit orders remain active until they fill, you cancel them, or the market closes.
+</Info>
+
+## Slippage
+
+Slippage is the difference between expected and actual execution price.
+
+### Market Order Slippage
+
+- **Common in**: Illiquid markets, large orders
+- **Minimize by**: Trading in liquid markets, smaller sizes
+- **Acceptable range**: Usually 1-3% in active markets
+
+### Limit Order Slippage
+
+- **No slippage**: You get your price or better
+- **Trade-off**: Order may not fill if price doesn't reach limit
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="When to Use Market Orders">
+    Use market orders when:
+    - Speed is more important than exact price
+    - Trading in highly liquid markets
+    - Entering/exiting quickly
+    - Position size is small relative to liquidity
+  </Accordion>
+  <Accordion title="When to Use Limit Orders">
+    Use limit orders when:
+    - You have a specific entry/exit price
+    - Trading in less liquid markets
+    - Price is more important than speed
+    - You're patient and can wait
+  </Accordion>
+  <Accordion title="Order Size Considerations">
+    - **Small orders**: Market orders usually fine
+    - **Large orders**: Consider limit orders to avoid moving price
+    - **Very large**: May need to split into multiple orders
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Strategies
+
+### Limit Order Laddering
+
+Place multiple limit orders at different prices:
+
+```
+Limit Buy at 45¢: $5
+Limit Buy at 40¢: $5
+Limit Buy at 35¢: $5
+```
+
+This allows you to:
+- Average your entry price
+- Capture price movements
+- Reduce impact on market
+
+### Stop-Loss Orders
+
+Use limit orders as stop-losses:
+
+```
+Current position: Long Yes at 50¢
+Stop-loss: Limit Sell at 45¢
+```
+
+If price drops to 45¢, your position closes automatically.
+
+## Next Steps
+
+- Learn about [placing orders](/trading/placing-orders) in practice
+- Understand [leverage trading](/trading/leverage)
+- Explore [trading strategies](/guides/trading-strategies)
+

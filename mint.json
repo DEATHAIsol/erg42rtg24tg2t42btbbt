@@ -1,0 +1,116 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "ProbioMarkets Documentation",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:support@probiomarkets.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Dashboard",
+    "url": "https://probiomarkets.com"
+  },
+  "anchors": [
+    {
+      "name": "Documentation",
+      "icon": "book-open-cover",
+      "url": "https://docs.probiomarkets.com"
+    },
+    {
+      "name": "Community",
+      "icon": "slack",
+      "url": "https://probiomarkets.com/community"
+    },
+    {
+      "name": "Blog",
+      "icon": "newspaper",
+      "url": "https://probiomarkets.com/blog"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "getting-started/what-are-prediction-markets",
+        "getting-started/how-prediction-markets-work",
+        "getting-started/creating-an-account"
+      ]
+    },
+    {
+      "group": "Trading",
+      "pages": [
+        "trading/overview",
+        "trading/placing-orders",
+        "trading/order-types",
+        "trading/leverage",
+        "trading/parlays"
+      ]
+    },
+    {
+      "group": "Markets",
+      "pages": [
+        "markets/exploring-markets",
+        "markets/market-categories",
+        "markets/market-resolution",
+        "markets/creating-markets"
+      ]
+    },
+    {
+      "group": "Portfolio",
+      "pages": [
+        "portfolio/overview",
+        "portfolio/managing-positions",
+        "portfolio/tracking-pnl"
+      ]
+    },
+    {
+      "group": "Liquidity",
+      "pages": [
+        "liquidity/overview",
+        "liquidity/depositing",
+        "liquidity/withdrawing",
+        "liquidity/yield-breakdown"
+      ]
+    },
+    {
+      "group": "API",
+      "pages": [
+        "api/overview",
+        "api/authentication",
+        "api/markets",
+        "api/trading",
+        "api/websockets"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/trading-strategies",
+        "guides/risk-management",
+        "guides/advanced-features"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "twitter": "https://twitter.com/probiomarkets",
+    "github": "https://github.com/probiomarkets",
+    "linkedin": "https://www.linkedin.com/company/probiomarkets"
+  }
+}
+

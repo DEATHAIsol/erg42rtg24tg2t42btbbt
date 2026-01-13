@@ -1,0 +1,172 @@
+---
+title: How Prediction Markets Work
+description: Deep dive into the mechanics of prediction markets
+---
+
+Understanding how prediction markets function is key to successful trading. This guide covers the mechanics, pricing, and market dynamics.
+
+## Market Structure
+
+### Binary Markets
+
+Binary markets have exactly two outcomes:
+
+```
+Market: "Will Bitcoin reach $100k by 2025?"
+
+Outcome 1: Yes (currently 45¢)
+Outcome 2: No (currently 55¢)
+```
+
+The prices always sum to approximately $1.00 (100¢), representing the probability distribution.
+
+### Market Creation
+
+Anyone can create a prediction market by:
+
+1. **Defining the question** clearly and unambiguously
+2. **Setting resolution criteria** - how the outcome will be determined
+3. **Choosing an end date** - when the market will resolve
+4. **Providing initial liquidity** (optional but recommended)
+
+<Warning>
+  Markets must have clear, objective resolution criteria to avoid disputes.
+</Warning>
+
+## Pricing Mechanism
+
+### Probability Pricing
+
+Share prices represent the market's collective probability assessment:
+
+- **75¢ Yes** = 75% chance the event occurs
+- **25¢ No** = 25% chance the event occurs
+
+### Order Book
+
+Markets use an **order book** system:
+
+<AccordionGroup>
+  <Accordion title="Bids (Buy Orders)">
+    Traders who want to **buy** shares place bids. The highest bid price is the best price to sell at.
+  </Accordion>
+  <Accordion title="Asks (Sell Orders)">
+    Traders who want to **sell** shares place asks. The lowest ask price is the best price to buy at.
+  </Accordion>
+  <Accordion title="Spread">
+    The difference between the best bid and best ask is the "spread". Tighter spreads indicate more liquid markets.
+  </Accordion>
+</AccordionGroup>
+
+### Example Order Book
+
+```
+Yes Shares:
+Bids (Buy):     Asks (Sell):
+$0.45 (100)     $0.48 (50)
+$0.44 (200)     $0.49 (100)
+$0.43 (150)     $0.50 (75)
+
+Current Price: $0.465 (midpoint)
+Spread: $0.03 (3¢)
+```
+
+## Trading Mechanics
+
+### Buying Shares
+
+When you buy "Yes" shares:
+1. You pay the current market price
+2. You receive shares that pay $1.00 if the event happens
+3. You can sell these shares anytime before resolution
+
+### Selling Shares
+
+When you sell "Yes" shares:
+1. You receive the current market price
+2. You're effectively betting against the event
+3. You profit if the event doesn't happen
+
+### Market Orders vs Limit Orders
+
+<CardGroup cols={2}>
+  <Card title="Market Orders" icon="bolt">
+    Execute immediately at the best available price. Faster but may have slippage.
+  </Card>
+  <Card title="Limit Orders" icon="target">
+    Execute only at your specified price or better. More control but may not fill immediately.
+  </Card>
+</CardGroup>
+
+## Market Dynamics
+
+### Information Flow
+
+Markets react to new information:
+
+1. **News breaks** about the event
+2. **Traders update** their probability assessments
+3. **Prices adjust** to reflect new information
+4. **Arbitrage opportunities** may arise
+
+### Liquidity
+
+Liquidity refers to how easily you can buy or sell without moving the price:
+
+- **High liquidity**: Large order books, tight spreads, easy to trade
+- **Low liquidity**: Small order books, wide spreads, harder to trade
+
+<Info>
+  Markets with more liquidity typically have more accurate prices because more information is incorporated.
+</Info>
+
+### Market Efficiency
+
+Efficient markets quickly incorporate all available information into prices. Factors affecting efficiency:
+
+- **Number of traders** - More traders = more information
+- **Liquidity** - Easier trading = faster price discovery
+- **Information availability** - Public information is quickly reflected
+
+## Leverage
+
+ProBioMarkets supports **leverage trading**:
+
+- **2x leverage**: Double your position size
+- **5x leverage**: 5x your position size
+- **10x leverage**: 10x your position size (higher risk)
+
+<Warning>
+  Leverage amplifies both gains and losses. Use with caution and proper risk management.
+</Warning>
+
+### Leverage Example
+
+Without leverage:
+- Buy 10 shares at 50¢ = $5.00
+- If price goes to 60¢: Profit = $1.00 (20% return)
+
+With 5x leverage:
+- Buy 50 shares at 50¢ = $5.00 (same capital)
+- If price goes to 60¢: Profit = $5.00 (100% return)
+- If price goes to 40¢: Loss = $5.00 (100% loss)
+
+## Parlays
+
+Combine multiple markets into a single bet:
+
+```
+Parlay:
+- Market A: Yes (60¢)
+- Market B: Yes (70¢)
+- Market C: No (55¢)
+
+Combined Odds: 0.60 × 0.70 × 0.55 = 0.231 (23.1¢)
+```
+
+All outcomes must be correct for the parlay to win, but payouts are multiplied.
+
+## Next Steps
+
+Ready to start trading? Learn about [placing orders](/trading/placing-orders) and [order types](/trading/order-types).
+
