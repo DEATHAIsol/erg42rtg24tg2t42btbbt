@@ -53,6 +53,8 @@ export default function PortfolioPage() {
     sortBy: 'volume',
     minVolume: 0,
     minLiquidity: 0,
+    minOdds: 1,
+    maxOdds: 99,
   })
   const [positionFilter, setPositionFilter] = useState<'all' | 'profitable' | 'losing'>('all')
   const [positionSort, setPositionSort] = useState<'pnl' | 'size' | 'date'>('date')
@@ -571,7 +573,7 @@ export default function PortfolioPage() {
                   const tradingState = getPaperTradingState()
                   const history = tradingState.tradeHistory || []
                   return history.length === 0 ? (
-                    <div className="text-center py-12 text-terminal-text-secondary">e
+                    <div className="text-center py-12 text-terminal-text-secondary">
                       <div className="text-lg font-medium mb-2">No trade history</div>
                       <div className="text-sm">Your closed positions will appear here</div>
                     </div>

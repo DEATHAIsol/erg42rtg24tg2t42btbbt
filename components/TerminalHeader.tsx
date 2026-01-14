@@ -30,7 +30,7 @@ export function TerminalHeader() {
             alt="Probio Markets" 
             className="h-11 w-11 object-contain flex-shrink-0 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)] group-hover:drop-shadow-[0_0_12px_rgba(59,130,246,0.7)] transition-all"
           />
-          <h1 className="text-lg font-bold whitespace-nowrap bg-gradient-to-r from-terminal-text-primary via-terminal-accent to-terminal-text-primary bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
+          <h1 className="text-xl font-bold whitespace-nowrap tracking-tight bg-gradient-to-r from-slate-400 via-rose-300 to-orange-300 bg-clip-text text-transparent">
             Probio Markets
           </h1>
         </Link>
@@ -42,7 +42,7 @@ export function TerminalHeader() {
               className={clsx(
                 'transition-colors',
                 pathname === item.href
-                  ? 'text-terminal-accent font-semibold'
+                  ? 'text-white font-semibold'
                   : 'text-terminal-text-secondary hover:text-terminal-text-primary'
               )}
             >
@@ -52,19 +52,21 @@ export function TerminalHeader() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1">
         <WalletButton />
         <button
           onClick={() => setAlertsOpen(true)}
-          className="p-2 text-terminal-text-secondary hover:text-terminal-text-primary transition-colors relative"
+          className="h-9 w-9 flex items-center justify-center text-terminal-text-muted hover:text-terminal-accent hover:bg-terminal-border/30 rounded-lg transition-all"
+          title="Alerts"
         >
-          <Bell size={18} />
+          <Bell size={16} />
         </button>
         <button
           onClick={() => setSettingsOpen(true)}
-          className="p-2 text-terminal-text-secondary hover:text-terminal-text-primary transition-colors"
+          className="h-9 w-9 flex items-center justify-center text-terminal-text-muted hover:text-terminal-accent hover:bg-terminal-border/30 rounded-lg transition-all"
+          title="Settings"
         >
-          <Settings size={18} />
+          <Settings size={16} />
         </button>
       </div>
 

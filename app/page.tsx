@@ -72,6 +72,8 @@ export default function MarketsPage() {
     sortBy: 'volume',
     minVolume: 0,
     minLiquidity: 0,
+    minOdds: 1,
+    maxOdds: 99,
   })
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -119,7 +121,7 @@ export default function MarketsPage() {
   useEffect(() => {
     // Reset to page 1 when filters change
     setCurrentPage(1)
-  }, [filters.searchQuery, filters.selectedTags, filters.minVolume, filters.minLiquidity, filters.sortBy])
+  }, [filters.searchQuery, filters.selectedTags, filters.minVolume, filters.minLiquidity, filters.minOdds, filters.maxOdds, filters.sortBy])
 
   useEffect(() => {
     // Load markets when page or filters change
@@ -129,7 +131,7 @@ export default function MarketsPage() {
     }, 100)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filters.searchQuery, filters.selectedTags, filters.minVolume, filters.minLiquidity, filters.sortBy])
+  }, [currentPage, filters.searchQuery, filters.selectedTags, filters.minVolume, filters.minLiquidity, filters.minOdds, filters.maxOdds, filters.sortBy])
 
   // Initialize markets in backend
   const initializeMarkets = async () => {
@@ -230,6 +232,15 @@ export default function MarketsPage() {
         filtered = filtered.filter((market) => (market.liquidity || 0) >= filters.minLiquidity)
       }
       
+      // Filter by odds range (yesPrice is 0-1, convert filters from 0-100 to 0-1)
+      if (filters.minOdds > 0 || filters.maxOdds < 100) {
+        filtered = filtered.filter((market) => {
+          const yesPrice = market.yesPrice ?? 0.5
+          const yesPriceCents = yesPrice * 100
+          return yesPriceCents >= filters.minOdds && yesPriceCents <= filters.maxOdds
+        })
+      }
+      
       filtered.sort((a, b) => {
         switch (filters.sortBy) {
           case 'volume': {
@@ -296,12 +307,14 @@ export default function MarketsPage() {
       }
       
       // If search query exists, search all markets from backend
-      if (filters.searchQuery.trim() || filters.selectedTags.length > 0 || filters.minVolume > 0 || filters.minLiquidity > 0) {
+      if (filters.searchQuery.trim() || filters.selectedTags.length > 0 || filters.minVolume > 0 || filters.minLiquidity > 0 || filters.minOdds > 0 || filters.maxOdds < 100) {
         const searchParams = new URLSearchParams()
         if (filters.searchQuery.trim()) searchParams.append('q', filters.searchQuery.trim())
         filters.selectedTags.forEach(tag => searchParams.append('tags', tag))
         if (filters.minVolume > 0) searchParams.append('minVolume', String(filters.minVolume))
         if (filters.minLiquidity > 0) searchParams.append('minLiquidity', String(filters.minLiquidity))
+        if (filters.minOdds > 0) searchParams.append('minOdds', String(filters.minOdds))
+        if (filters.maxOdds < 100) searchParams.append('maxOdds', String(filters.maxOdds))
         searchParams.append('sortBy', filters.sortBy)
         searchParams.append('limit', String(itemsPerPage))
         searchParams.append('offset', String((currentPage - 1) * itemsPerPage))

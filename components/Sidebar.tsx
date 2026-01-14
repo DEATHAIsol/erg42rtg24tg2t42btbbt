@@ -9,6 +9,8 @@ export interface MarketFilters {
   sortBy: 'volume' | 'liquidity' | 'newest' | 'oldest'
   minVolume: number
   minLiquidity: number
+  minOdds: number // 0-100 (percentage)
+  maxOdds: number // 0-100 (percentage)
 }
 
 interface SidebarProps {
@@ -36,6 +38,8 @@ export function Sidebar({ isOpen, onToggle, filters, onFiltersChange }: SidebarP
       sortBy: 'volume',
       minVolume: 0,
       minLiquidity: 0,
+      minOdds: 1,
+      maxOdds: 99,
     })
   }
 
@@ -43,7 +47,9 @@ export function Sidebar({ isOpen, onToggle, filters, onFiltersChange }: SidebarP
     filters.searchQuery.length > 0 ||
     filters.selectedTags.length > 0 ||
     filters.minVolume > 0 ||
-    filters.minLiquidity > 0
+    filters.minLiquidity > 0 ||
+    filters.minOdds > 1 ||
+    filters.maxOdds < 99
 
   return (
     <div
@@ -149,65 +155,85 @@ export function Sidebar({ isOpen, onToggle, filters, onFiltersChange }: SidebarP
               </select>
             </div>
 
-            {/* Volume Filter */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1 h-4 bg-terminal-accent rounded-full"></div>
-                <div className="flex items-center justify-between flex-1">
-                  <span className="text-sm font-semibold text-terminal-text-primary">
-                    Min Volume
-                  </span>
-                  <span className="text-xs font-medium text-terminal-accent bg-terminal-accent/10 px-2 py-0.5 rounded">
-                    ${(filters.minVolume / 1000).toFixed(0)}k
-                  </span>
+            {/* Volume & Liquidity Filters */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-terminal-text-secondary mb-1.5 block">Min Volume</label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-terminal-text-muted text-sm">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={filters.minVolume || ''}
+                    onChange={(e) => updateFilters({ minVolume: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                    className="terminal-input w-full pl-6 pr-2 py-2 text-sm bg-terminal-bg border-terminal-border focus:border-terminal-accent"
+                  />
                 </div>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="10000000"
-                step="10000"
-                value={filters.minVolume}
-                onChange={(e) => updateFilters({ minVolume: parseInt(e.target.value) })}
-                className="w-full h-2 bg-terminal-border rounded-lg appearance-none cursor-pointer accent-terminal-accent"
-                style={{
-                  background: `linear-gradient(to right, var(--terminal-accent) 0%, var(--terminal-accent) ${(filters.minVolume / 10000000) * 100}%, var(--terminal-border) ${(filters.minVolume / 10000000) * 100}%, var(--terminal-border) 100%)`
-                }}
-              />
-              <div className="flex justify-between text-xs text-terminal-text-muted mt-2">
-                <span>$0</span>
-                <span>$10M</span>
+              <div>
+                <label className="text-xs text-terminal-text-secondary mb-1.5 block">Min Liquidity</label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-terminal-text-muted text-sm">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={filters.minLiquidity || ''}
+                    onChange={(e) => updateFilters({ minLiquidity: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                    className="terminal-input w-full pl-6 pr-2 py-2 text-sm bg-terminal-bg border-terminal-border focus:border-terminal-accent"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Liquidity Filter */}
+            {/* Odds Range Filter */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1 h-4 bg-terminal-accent rounded-full"></div>
-                <div className="flex items-center justify-between flex-1">
-                  <span className="text-sm font-semibold text-terminal-text-primary">
-                    Min Liquidity
-                  </span>
-                  <span className="text-xs font-medium text-terminal-accent bg-terminal-accent/10 px-2 py-0.5 rounded">
-                    ${(filters.minLiquidity / 1000).toFixed(0)}k
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1 h-4 bg-terminal-success rounded-full"></div>
+                <span className="text-sm font-semibold text-terminal-text-primary">Yes Odds Range</span>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="5000000"
-                step="5000"
-                value={filters.minLiquidity}
-                onChange={(e) => updateFilters({ minLiquidity: parseInt(e.target.value) })}
-                className="w-full h-2 bg-terminal-border rounded-lg appearance-none cursor-pointer accent-terminal-accent"
-                style={{
-                  background: `linear-gradient(to right, var(--terminal-accent) 0%, var(--terminal-accent) ${(filters.minLiquidity / 5000000) * 100}%, var(--terminal-border) ${(filters.minLiquidity / 5000000) * 100}%, var(--terminal-border) 100%)`
-                }}
-              />
-              <div className="flex justify-between text-xs text-terminal-text-muted mt-2">
-                <span>$0</span>
-                <span>$5M</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-terminal-text-secondary mb-1.5 block">Min Odds</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={filters.minOdds}
+                      onChange={(e) => {
+                        const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0))
+                        updateFilters({ 
+                          minOdds: val,
+                          maxOdds: Math.max(val, filters.maxOdds)
+                        })
+                      }}
+                      className="terminal-input w-full px-2 py-2 text-sm bg-terminal-bg border-terminal-border focus:border-terminal-success pr-6"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-terminal-text-muted text-sm">¢</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-terminal-text-secondary mb-1.5 block">Max Odds</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={filters.maxOdds}
+                      onChange={(e) => {
+                        const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0))
+                        updateFilters({ 
+                          maxOdds: val,
+                          minOdds: Math.min(val, filters.minOdds)
+                        })
+                      }}
+                      className="terminal-input w-full px-2 py-2 text-sm bg-terminal-bg border-terminal-border focus:border-terminal-success pr-6"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-terminal-text-muted text-sm">¢</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -235,6 +261,11 @@ export function Sidebar({ isOpen, onToggle, filters, onFiltersChange }: SidebarP
                   {filters.minLiquidity > 0 && (
                     <span className="px-2.5 py-1 bg-terminal-accent/20 text-terminal-accent rounded-md text-xs font-medium border border-terminal-accent/30">
                       Liq: ${(filters.minLiquidity / 1000).toFixed(0)}k+
+                    </span>
+                  )}
+                  {(filters.minOdds > 0 || filters.maxOdds < 100) && (
+                    <span className="px-2.5 py-1 bg-terminal-success/20 text-terminal-success rounded-md text-xs font-medium border border-terminal-success/30">
+                      Odds: {filters.minOdds}¢-{filters.maxOdds}¢
                     </span>
                   )}
                 </div>

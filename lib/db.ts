@@ -311,6 +311,8 @@ export const dbOperations = {
       tags?: string[]
       minVolume?: number
       minLiquidity?: number
+      minOdds?: number // 0-1 decimal
+      maxOdds?: number // 0-1 decimal
     },
     sortBy: 'volume' | 'liquidity' | 'newest' | 'oldest' = 'volume',
     limit: number,
@@ -355,6 +357,18 @@ export const dbOperations = {
     if (filters.minLiquidity && filters.minLiquidity > 0) {
       whereConditions.push('liquidity >= ?')
       params.push(filters.minLiquidity)
+    }
+
+    // Min odds filter (yesPrice is 0-1)
+    if (filters.minOdds !== undefined) {
+      whereConditions.push('COALESCE(yesPrice, 0.5) >= ?')
+      params.push(filters.minOdds)
+    }
+
+    // Max odds filter (yesPrice is 0-1)
+    if (filters.maxOdds !== undefined) {
+      whereConditions.push('COALESCE(yesPrice, 0.5) <= ?')
+      params.push(filters.maxOdds)
     }
 
     const whereClause = whereConditions.join(' AND ')

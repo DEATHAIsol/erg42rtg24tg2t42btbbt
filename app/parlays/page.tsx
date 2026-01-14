@@ -42,6 +42,8 @@ export default function ParlaysPage() {
     sortBy: 'volume',
     minVolume: 0,
     minLiquidity: 0,
+    minOdds: 1,
+    maxOdds: 99,
   })
   const [marketSelectorSearch, setMarketSelectorSearch] = useState('')
   const [marketSelectorTags, setMarketSelectorTags] = useState<string[]>([])

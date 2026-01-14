@@ -262,6 +262,8 @@ export const dbOperations = {
       tags?: string[]
       minVolume?: number
       minLiquidity?: number
+      minOdds?: number // 0-1 decimal
+      maxOdds?: number // 0-1 decimal
     },
     sortBy: 'volume' | 'liquidity' | 'newest' | 'oldest' = 'volume',
     limit: number = 24,
@@ -294,6 +296,18 @@ export const dbOperations = {
       paramCount++
       sql += ` AND liquidity >= $${paramCount}`
       params.push(filters.minLiquidity)
+    }
+
+    if (filters?.minOdds !== undefined) {
+      paramCount++
+      sql += ` AND COALESCE("yesPrice", 0.5) >= $${paramCount}`
+      params.push(filters.minOdds)
+    }
+
+    if (filters?.maxOdds !== undefined) {
+      paramCount++
+      sql += ` AND COALESCE("yesPrice", 0.5) <= $${paramCount}`
+      params.push(filters.maxOdds)
     }
 
     // Get total count

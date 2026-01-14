@@ -11,9 +11,9 @@ export default function LiquidityPage() {
   const [activeAction, setActiveAction] = useState<'deposit' | 'withdraw'>('deposit')
 
   const poolStats = {
-    totalValueLocked: 2456789.45,
+    totalValueLocked: 146789.45,
     apy: 12.5,
-    totalDepositors: 1247,
+    totalDepositors: 163,
     yourDeposit: 0,
     yourEarnings: 0,
     dailyYield: 0.034,
@@ -74,14 +74,14 @@ export default function LiquidityPage() {
                     {formatCompact(poolStats.totalValueLocked)}
                   </div>
                   <div className="text-xs text-terminal-text-secondary">Total Value Locked</div>
-                  <div className="text-xs text-terminal-success mt-1">+2.4% 24h</div>
+                  <div className="text-xs text-terminal-success mt-1">+1852.4% 24h</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-terminal-text-primary mb-1">
                     {poolStats.totalDepositors.toLocaleString()}
                   </div>
                   <div className="text-xs text-terminal-text-secondary">Active Depositors</div>
-                  <div className="text-xs text-terminal-success mt-1">+23 today</div>
+                  <div className="text-xs text-terminal-success mt-1">+155 today</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-terminal-text-primary mb-1">
