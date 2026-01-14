@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { PolymarketMarket } from '@/lib/polymarket'
-import { TrendingUp, TrendingDown, DollarSign, Clock, Image as ImageIcon } from 'lucide-react'
+import { TrendingUp, TrendingDown, Clock, Image as ImageIcon } from 'lucide-react'
 import Image from 'next/image'
 import { formatVolumeCompact } from '@/lib/format'
 
@@ -197,9 +197,8 @@ export function MarketList({ markets, onMarketSelect, selectedMarket }: MarketLi
             </div>
 
             <div className="col-span-2 text-right">
-              <div className="flex items-center justify-end gap-1 text-terminal-text-secondary">
-                <DollarSign size={12} />
-                <span>{formatVolumeCompact(market.volume)}</span>
+              <div className="text-terminal-text-secondary">
+                {formatVolumeCompact(market.volume)}
               </div>
             </div>
 

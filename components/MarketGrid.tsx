@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { PolymarketMarket } from '@/lib/polymarket'
-import { TrendingUp, TrendingDown, DollarSign, Image as ImageIcon } from 'lucide-react'
+import { TrendingUp, TrendingDown, Image as ImageIcon } from 'lucide-react'
 import Image from 'next/image'
 import { formatVolumeCompact } from '@/lib/format'
 // Prices are now fetched via bulk API endpoint
@@ -178,9 +178,8 @@ export function MarketGrid({ markets, onMarketSelect, selectedMarket }: MarketGr
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1 text-terminal-text-secondary">
-                    <DollarSign size={12} />
-                    <span>Vol: {formatVolumeCompact(market.volume)}</span>
+                  <div className="text-terminal-text-secondary">
+                    Vol: {formatVolumeCompact(market.volume)}
                   </div>
                   {price !== null && (
                     <span className={`${change > 0 ? 'text-terminal-success' : 'text-terminal-danger'}`}>

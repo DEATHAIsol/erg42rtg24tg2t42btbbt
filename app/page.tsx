@@ -8,7 +8,7 @@ import { MarketChart } from '@/components/MarketChart'
 import { TradingPanel } from '@/components/TradingPanel'
 import { Sidebar } from '@/components/Sidebar'
 import { fetchMarkets, PolymarketMarket } from '@/lib/polymarket'
-import { LayoutGrid, List, RefreshCw, ChevronDown, ChevronUp, Image as ImageIcon, ExternalLink } from 'lucide-react'
+import { LayoutGrid, List, RefreshCw, ChevronDown, ChevronUp, Image as ImageIcon, ExternalLink, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Pagination } from '@/components/Pagination'
 import { MarketFilters } from '@/components/Sidebar'
@@ -30,6 +30,7 @@ export default function MarketsPage() {
   const priceRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const itemsPerPage = 24
   const [showHowItWorks, setShowHowItWorks] = useState(false)
+  const [panelExpanded, setPanelExpanded] = useState(true)
 
   // Market Description Component
   function MarketDescription({ description }: { description: string }) {
@@ -377,6 +378,7 @@ export default function MarketsPage() {
     }
     
     setSelectedMarket(market)
+    setPanelExpanded(true) // Auto-expand when selecting a market
     setLoadingPrice(true)
     setMarketPrice(null)
     
@@ -594,108 +596,120 @@ export default function MarketsPage() {
             </div>
           </div>
 
-          {/* Trading Panel */}
-          <div className="w-96 flex flex-col border-l border-terminal-border bg-terminal-surface">
-            {selectedMarket ? (
-              <>
-                <div className="p-4 border-b border-terminal-border">
-                  <div className="flex items-start gap-3 mb-2">
-                    {/* Market Image Icon */}
-                    <div className="flex-shrink-0">
-                      {selectedMarket.imageUrl ? (
-                        <div className="relative w-12 h-12 bg-terminal-bg rounded overflow-hidden border border-terminal-border">
-                          <Image
-                            src={selectedMarket.imageUrl}
-                            alt={selectedMarket.question}
-                            fill
-                            className="object-cover"
-                            sizes="48px"
-                            onError={(e: any) => {
-                              e.currentTarget.style.display = 'none'
-                            }}
-                          />
+          {/* Trading Panel - Collapsible Drawer */}
+          <div className={`relative flex transition-all duration-300 ease-in-out ${panelExpanded ? 'w-96' : 'w-0'}`}>
+            {/* Collapse/Expand Toggle Button */}
+            <button
+              onClick={() => setPanelExpanded(!panelExpanded)}
+              className={`absolute top-1/2 -translate-y-1/2 z-10 w-6 h-16 bg-terminal-surface border border-terminal-border rounded-l-lg flex items-center justify-center hover:bg-terminal-bg transition-colors ${panelExpanded ? '-left-6' : '-left-6'}`}
+              title={panelExpanded ? 'Collapse panel' : 'Expand panel'}
+            >
+              <ChevronRight size={16} className={`text-terminal-text-secondary transition-transform duration-300 ${panelExpanded ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {/* Panel Content */}
+            <div className={`flex flex-col border-l border-terminal-border bg-terminal-surface overflow-hidden transition-all duration-300 ${panelExpanded ? 'w-96 opacity-100' : 'w-0 opacity-0'}`}>
+              {selectedMarket ? (
+                <>
+                  <div className="p-4 border-b border-terminal-border">
+                    <div className="flex items-start gap-3 mb-2">
+                      {/* Market Image Icon */}
+                      <div className="flex-shrink-0">
+                        {selectedMarket.imageUrl ? (
+                          <div className="relative w-12 h-12 bg-terminal-bg rounded overflow-hidden border border-terminal-border">
+                            <Image
+                              src={selectedMarket.imageUrl}
+                              alt={selectedMarket.question}
+                              fill
+                              className="object-cover"
+                              sizes="48px"
+                              onError={(e: any) => {
+                                e.currentTarget.style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 bg-terminal-bg/50 border border-terminal-border rounded flex items-center justify-center">
+                            <ImageIcon size={20} className="text-terminal-text-muted opacity-50" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-semibold text-lg flex-1">{selectedMarket.question}</h3>
+                          <button
+                            onClick={() => router.push(`/market/${selectedMarket.id}`)}
+                            className="flex items-center gap-1.5 px-2 py-1 text-xs text-terminal-accent hover:text-terminal-accent/80 hover:bg-terminal-accent/10 rounded border border-terminal-border hover:border-terminal-accent transition-colors flex-shrink-0"
+                            title="Expand to full page"
+                          >
+                            <ExternalLink size={14} />
+                            Expand
+                          </button>
                         </div>
-                      ) : (
-                        <div className="w-12 h-12 bg-terminal-bg/50 border border-terminal-border rounded flex items-center justify-center">
-                          <ImageIcon size={20} className="text-terminal-text-muted opacity-50" />
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-lg flex-1">{selectedMarket.question}</h3>
-                        <button
-                          onClick={() => router.push(`/market/${selectedMarket.id}`)}
-                          className="flex items-center gap-1.5 px-2 py-1 text-xs text-terminal-accent hover:text-terminal-accent/80 hover:bg-terminal-accent/10 rounded border border-terminal-border hover:border-terminal-accent transition-colors flex-shrink-0"
-                          title="Expand to full page"
-                        >
-                          <ExternalLink size={14} />
-                          Expand
-                        </button>
                       </div>
                     </div>
+                    
+                    {selectedMarket.description && (
+                      <div className="mt-2">
+                        <MarketDescription description={selectedMarket.description} />
+                      </div>
+                    )}
                   </div>
-                  
-                  {selectedMarket.description && (
-                    <div className="mt-2">
-                      <MarketDescription description={selectedMarket.description} />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 overflow-auto">
-                  {loadingPrice ? (
-                    <div className="p-4 text-center text-terminal-text-secondary">
-                      Loading price data...
-                    </div>
-                  ) : (
-                    <>
-                      {marketPrice && (
-                        <div className="p-4 border-b border-terminal-border bg-terminal-bg/50">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <div className="text-xs text-terminal-text-secondary mb-1">Yes Price</div>
-                              <div className="text-lg font-bold text-terminal-success">
-                                {marketPrice.yes?.price !== null && marketPrice.yes?.price !== undefined 
-                                  ? `${(marketPrice.yes.price * 100).toFixed(1)}¢` 
-                                  : 'N/A'}
-                              </div>
-                              {marketPrice.yes?.buyPrice && (
-                                <div className="text-xs text-terminal-text-muted mt-1">
-                                  Buy: {(marketPrice.yes.buyPrice * 100).toFixed(1)}¢
+                  <div className="flex-1 overflow-auto">
+                    {loadingPrice ? (
+                      <div className="p-4 text-center text-terminal-text-secondary">
+                        Loading price data...
+                      </div>
+                    ) : (
+                      <>
+                        {marketPrice && (
+                          <div className="p-4 border-b border-terminal-border bg-terminal-bg/50">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-xs text-terminal-text-secondary mb-1">Yes Price</div>
+                                <div className="text-lg font-bold text-terminal-success">
+                                  {marketPrice.yes?.price !== null && marketPrice.yes?.price !== undefined 
+                                    ? `${(marketPrice.yes.price * 100).toFixed(1)}¢` 
+                                    : 'N/A'}
                                 </div>
-                              )}
-                            </div>
-                            <div>
-                              <div className="text-xs text-terminal-text-secondary mb-1">No Price</div>
-                              <div className="text-lg font-bold text-terminal-danger">
-                                {marketPrice.no?.price !== null && marketPrice.no?.price !== undefined 
-                                  ? `${(marketPrice.no.price * 100).toFixed(1)}¢` 
-                                  : 'N/A'}
+                                {marketPrice.yes?.buyPrice && (
+                                  <div className="text-xs text-terminal-text-muted mt-1">
+                                    Buy: {(marketPrice.yes.buyPrice * 100).toFixed(1)}¢
+                                  </div>
+                                )}
                               </div>
-                              {marketPrice.no?.buyPrice && (
-                                <div className="text-xs text-terminal-text-muted mt-1">
-                                  Buy: {(marketPrice.no.buyPrice * 100).toFixed(1)}¢
+                              <div>
+                                <div className="text-xs text-terminal-text-secondary mb-1">No Price</div>
+                                <div className="text-lg font-bold text-terminal-danger">
+                                  {marketPrice.no?.price !== null && marketPrice.no?.price !== undefined 
+                                    ? `${(marketPrice.no.price * 100).toFixed(1)}¢` 
+                                    : 'N/A'}
                                 </div>
-                              )}
+                                {marketPrice.no?.buyPrice && (
+                                  <div className="text-xs text-terminal-text-muted mt-1">
+                                    Buy: {(marketPrice.no.buyPrice * 100).toFixed(1)}¢
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                      <MarketChart market={selectedMarket} priceData={marketPrice} />
-                      <TradingPanel market={selectedMarket} priceData={marketPrice} />
-                    </>
-                  )}
+                        )}
+                        <MarketChart market={selectedMarket} priceData={marketPrice} />
+                        <TradingPanel market={selectedMarket} priceData={marketPrice} />
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-terminal-text-secondary">
+                  <div className="text-center">
+                    <p>Select a market to view details</p>
+                    <p className="text-sm mt-2">and start trading</p>
+                  </div>
                 </div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full text-terminal-text-secondary">
-                <div className="text-center">
-                  <p>Select a market to view details</p>
-                  <p className="text-sm mt-2">and start trading</p>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
