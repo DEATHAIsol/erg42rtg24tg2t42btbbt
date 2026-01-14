@@ -33,9 +33,11 @@ export function MarketList({ markets, onMarketSelect, selectedMarket }: MarketLi
             : null)
       
       if (price !== null && !isNaN(price) && isFinite(price) && price > 0 && price < 1) {
+        // Use priceChange24h from market data if available (stored as percentage)
+        const change = (market as any).priceChange24h ?? 0
         priceMap[market.id] = {
           price: price,
-          change: 0, // TODO: Calculate actual change from historical data
+          change: change,
         }
       }
     })

@@ -62,6 +62,7 @@ async function initializeSchema() {
       "yesOrderBook" TEXT,
       "noOrderBook" TEXT,
       "priceSyncedAt" TEXT,
+      "priceChange24h" REAL,
       "lastSyncedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -89,6 +90,7 @@ function marketToRow(market: PolymarketMarket & {
   yesOrderBook?: any
   noOrderBook?: any
   priceSyncedAt?: string | null
+  priceChange24h?: number | null
 }): any {
   return {
     id: market.id,
@@ -120,6 +122,7 @@ function marketToRow(market: PolymarketMarket & {
     yesOrderBook: market.yesOrderBook ? JSON.stringify(market.yesOrderBook) : null,
     noOrderBook: market.noOrderBook ? JSON.stringify(market.noOrderBook) : null,
     priceSyncedAt: market.priceSyncedAt || null,
+    priceChange24h: market.priceChange24h ?? null,
     lastSyncedAt: new Date().toISOString(),
   }
 }
@@ -133,6 +136,7 @@ function rowToMarket(row: any): PolymarketMarket & {
   yesOrderBook?: any
   noOrderBook?: any
   priceSyncedAt?: string
+  priceChange24h?: number
 } {
   return {
     id: row.id,
@@ -164,6 +168,7 @@ function rowToMarket(row: any): PolymarketMarket & {
     yesOrderBook: row.yesOrderBook ? (typeof row.yesOrderBook === 'string' ? JSON.parse(row.yesOrderBook) : row.yesOrderBook) : undefined,
     noOrderBook: row.noOrderBook ? (typeof row.noOrderBook === 'string' ? JSON.parse(row.noOrderBook) : row.noOrderBook) : undefined,
     priceSyncedAt: row.priceSyncedAt || undefined,
+    priceChange24h: row.priceChange24h ?? undefined,
   }
 }
 
@@ -186,10 +191,10 @@ export const dbOperations = {
             closed, "resolutionSource", tags, "createdAt", "updatedAt", "conditionId",
             "clobTokenIds", "yesPrice", "noPrice", "yesBuyPrice", "yesSellPrice", 
             "noBuyPrice", "noSellPrice", "yesOrderBook", "noOrderBook", 
-            "priceSyncedAt", "lastSyncedAt"
+            "priceSyncedAt", "priceChange24h", "lastSyncedAt"
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 
-            $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30
+            $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31
           )
           ON CONFLICT(id) DO UPDATE SET
             question = EXCLUDED.question,
@@ -220,6 +225,7 @@ export const dbOperations = {
             "yesOrderBook" = COALESCE(EXCLUDED."yesOrderBook", markets."yesOrderBook"),
             "noOrderBook" = COALESCE(EXCLUDED."noOrderBook", markets."noOrderBook"),
             "priceSyncedAt" = COALESCE(EXCLUDED."priceSyncedAt", markets."priceSyncedAt"),
+            "priceChange24h" = COALESCE(EXCLUDED."priceChange24h", markets."priceChange24h"),
             "lastSyncedAt" = EXCLUDED."lastSyncedAt"
         `, [
           row.id, row.question, row.description, row.slug, row.imageUrl, row.endDate, row.startDate,
@@ -227,7 +233,7 @@ export const dbOperations = {
           row.closed, row.resolutionSource, row.tags, row.createdAt, row.updatedAt, row.conditionId,
           row.clobTokenIds, row.yesPrice, row.noPrice, row.yesBuyPrice, row.yesSellPrice,
           row.noBuyPrice, row.noSellPrice, row.yesOrderBook, row.noOrderBook,
-          row.priceSyncedAt, row.lastSyncedAt
+          row.priceSyncedAt, row.priceChange24h, row.lastSyncedAt
         ])
       }
       

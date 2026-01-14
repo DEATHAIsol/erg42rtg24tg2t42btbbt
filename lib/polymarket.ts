@@ -23,6 +23,7 @@ export interface PolymarketMarket {
   clobTokenIds?: string[]; // Array of CLOB token IDs [yesTokenId, noTokenId]
   yesPrice?: number | null; // Yes outcome price from Gamma API
   noPrice?: number | null; // No outcome price from Gamma API
+  priceChange24h?: number | null; // 24h price change from Gamma API
 }
 
 export interface MarketPrice {

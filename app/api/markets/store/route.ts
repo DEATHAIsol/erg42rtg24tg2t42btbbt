@@ -120,6 +120,11 @@ export async function POST(request: NextRequest) {
               }
             }
             
+            // Get 24h price change from API (it's a decimal like 0.05 for 5%)
+            const priceChange24h = typeof market.oneDayPriceChange === 'number' 
+              ? market.oneDayPriceChange * 100 // Convert to percentage
+              : null
+            
             return {
               id: market.conditionId || market.id || market._id,
               question: market.question || market.title || '',
@@ -143,6 +148,7 @@ export async function POST(request: NextRequest) {
               clobTokenIds: clobTokenIds,
               yesPrice: yesPrice,
               noPrice: noPrice,
+              priceChange24h: priceChange24h,
             } as PolymarketMarket
           })
           // Filter out markets with no price data and expired markets
