@@ -6,6 +6,8 @@ import { TrendingUp, TrendingDown, Layers, Zap, Target, DollarSign, AlertCircle 
 import { useCustodialWallet } from '@/lib/useCustodialWallet'
 import { getOrderBook, getBestPrice, placeOrder, OrderType, Side } from '@/lib/clob-client'
 import { placePaperOrder, getPaperTradingState } from '@/lib/paper-trading'
+import { fetchWalletBalanceHelius } from '@/lib/helius-api'
+import { getDemoMode } from '@/lib/demo-mode'
 import { useToast } from './Toast'
 import { playSuccessSound } from '@/lib/sounds'
 
@@ -32,9 +34,11 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
   const [yesPrice, setYesPrice] = useState<number | null>(null)
   const [noPrice, setNoPrice] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
-  const [loadingOrderBook, setLoadingOrderBook] = useState(false)
-  const [paperBalance, setPaperBalance] = useState(0)
-  const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in USD
+const [loadingOrderBook, setLoadingOrderBook] = useState(false)
+const [paperBalance, setPaperBalance] = useState(0)
+const [walletBalance, setWalletBalance] = useState<number | null>(null)
+const [demoMode, setDemoMode] = useState<boolean>(false)
+const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in USD
 
   // Fetch SOL price
   useEffect(() => {
@@ -81,6 +85,78 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
       window.removeEventListener('paper-trading-updated', updateBalance)
     }
   }, [market.id, selectedOutcome])
+
+  // Load real wallet balance (live mode)
+  useEffect(() => {
+    if (!address) {
+      setWalletBalance(null)
+      return
+    }
+
+    let intervalId: NodeJS.Timeout | null = null
+
+    const loadWalletBalance = async () => {
+      try {
+        const bal = await fetchWalletBalanceHelius(address)
+        setWalletBalance(bal)
+      } catch {
+        setWalletBalance(0)
+      }
+    }
+
+    loadWalletBalance()
+    intervalId = setInterval(loadWalletBalance, 30000)
+
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [address])
+
+  // Demo mode toggle listener
+  useEffect(() => {
+    setDemoMode(getDemoMode())
+    const handleDemo = (e: Event) => {
+      const enabled = (e as CustomEvent)?.detail?.enabled
+      if (typeof enabled === 'boolean') {
+        setDemoMode(enabled)
+      } else {
+        setDemoMode(getDemoMode())
+      }
+    }
+    window.addEventListener('demo-mode-updated', handleDemo)
+    return () => {
+      window.removeEventListener('demo-mode-updated', handleDemo)
+    }
+  }, [])
+
+  // Load real wallet balance via Helius (custodial wallet)
+  useEffect(() => {
+    if (!address) {
+      setWalletBalance(null)
+      return
+    }
+
+    let intervalId: NodeJS.Timeout | null = null
+
+    const loadWalletBalance = async () => {
+      try {
+        const bal = await fetchWalletBalanceHelius(address)
+        setWalletBalance(bal)
+      } catch {
+        // On failure, treat as 0 as per requirement
+        setWalletBalance(0)
+      }
+    }
+
+    loadWalletBalance()
+    intervalId = setInterval(loadWalletBalance, 30000)
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
+  }, [address])
   
   useEffect(() => {
     // Update prices from priceData if available
@@ -205,6 +281,20 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
         ? currentPrice 
         : parseFloat(limitPrice) / 100 // Convert cents to decimal
 
+      // Cost calculation: margin is what user enters, cost is margin * price (actual share cost)
+      // Fees are added on top: trading fee (2% of margin) + site fee
+      // Total required = margin + trading fee + site fee + buffer
+      const margin = parseFloat(amount)
+      const tradingFee = margin * TRADING_FEE_PERCENT
+      const totalFees = tradingFee + SITE_FEE_SOL
+      const totalCost = margin + totalFees // Match what's displayed: margin + fees
+      const required = totalCost + 0.01 // Add 0.01 SOL buffer
+      const effectiveBalance = demoMode ? paperBalance : (walletBalance ?? 0)
+      if (effectiveBalance < required) {
+        toast.showError(`Insufficient balance. Need ${required.toFixed(4)} SOL (includes 0.01 SOL buffer), have ${effectiveBalance.toFixed(4)} SOL`)
+        return
+      }
+
       // Use paper trading instead of real API
       const result = placePaperOrder(
         market.id,
@@ -266,6 +356,9 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
   const positionSize = margin * leverage
   // Borrowed amount (what you owe back)
   const borrowed = positionSize - margin
+
+  const displayBalance = demoMode ? paperBalance : (walletBalance ?? 0)
+  const balanceLabel = demoMode ? 'Demo Balance' : 'Balance'
   
   // With leverage: you buy (margin * leverage) worth of shares at currentPrice
   // Gross value if win = positionSize / currentPrice
@@ -302,9 +395,13 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
             <p className="text-xs text-terminal-text-muted line-clamp-1">{market.question}</p>
           </div>
           <div className="text-right">
-            <div className="text-xs text-terminal-text-muted mb-0.5">Balance</div>
-            <div className="text-sm font-bold text-terminal-accent">{paperBalance.toFixed(4)} SOL</div>
-            <div className="text-xs text-terminal-text-muted">${(paperBalance * solPrice).toFixed(2)}</div>
+            <div className="text-xs text-terminal-text-muted mb-0.5">{balanceLabel}</div>
+            <div className="text-sm font-bold text-terminal-accent">
+              {displayBalance.toFixed(4)} SOL
+            </div>
+            <div className="text-xs text-terminal-text-muted">
+              ${((displayBalance * solPrice)).toFixed(2)}
+            </div>
           </div>
         </div>
       </div>

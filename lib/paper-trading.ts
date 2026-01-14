@@ -92,9 +92,10 @@ export function openPosition(
   // size is the number of shares, entryPrice is the price per share
   // With leverage, you only need to put up (size * entryPrice) / leverage as margin
   const cost = (size * entryPrice) / leverage
+  const required = cost + 0.01 // Require at least 1.04 SOL buffer
   
-  if (state.balance < cost) {
-    return { success: false, error: `Insufficient balance. Need ${cost.toFixed(4)} SOL, have ${state.balance.toFixed(4)} SOL` }
+  if (state.balance < required) {
+    return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} SOL (including 0.01 SOL buffer), have ${state.balance.toFixed(4)} SOL` }
   }
 
   const position: PaperPosition = {
@@ -183,9 +184,10 @@ export function placePaperOrder(
   } else {
     // Limit orders are stored
     const cost = (size * price) / leverage
+    const required = cost + 0.01 // Require at least 1.04 SOL buffer
     
-    if (state.balance < cost) {
-      return { success: false, error: `Insufficient balance. Need ${cost.toFixed(4)} SOL, have ${state.balance.toFixed(4)} SOL` }
+    if (state.balance < required) {
+      return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} SOL (including 0.01 SOL buffer), have ${state.balance.toFixed(4)} SOL` }
     }
 
     // Reserve the cost (deduct from balance)
@@ -282,6 +284,16 @@ export function getPortfolioValue(currentPrices: Map<string, { yes: number | nul
     totalPnL,
     availableBalance: state.balance,
   }
+}
+
+// Set paper trading balance (used for demo mode)
+export function setPaperTradingBalance(amount: number): number {
+  if (typeof window === 'undefined') return amount
+  const state = getPaperTradingState()
+  state.balance = amount
+  saveState(state)
+  window.dispatchEvent(new CustomEvent('paper-trading-updated'))
+  return state.balance
 }
 
 // Reset paper trading (for testing)

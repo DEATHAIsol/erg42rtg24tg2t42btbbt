@@ -8,6 +8,8 @@ import { fetchMarkets, PolymarketMarket } from '@/lib/polymarket'
 import { MarketFilters } from '@/components/Sidebar'
 import { Plus, X, TrendingUp, TrendingDown, Calculator, Trash2, ArrowRight, CheckCircle2, AlertCircle, Search, SlidersHorizontal, Zap, Eye, RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
 import { checkParlayStatus, getParlayStats, getPlacedParlays as getPlacedParlaysFromStorage, savePlacedParlay, updateAllParlayCurrentValues, calculateCombinedOdds, calculatePayout, type PlacedParlay, type ParlayLeg as ParlayLegType } from '@/lib/parlay-management'
+import { fetchWalletBalanceHelius } from '@/lib/helius-api'
+import { getDemoMode } from '@/lib/demo-mode'
 import { getPaperTradingState } from '@/lib/paper-trading'
 import { useRouter } from 'next/navigation'
 import { getBestPrice } from '@/lib/clob-client'
@@ -29,7 +31,8 @@ interface ParlayLeg {
 export default function ParlaysPage() {
   const router = useRouter()
   const toast = useToast()
-  const { connected } = useCustodialWallet()
+  const { publicKey, connected } = useCustodialWallet()
+  const address = publicKey?.toString() || null
   const isConnected = connected
   const [markets, setMarkets] = useState<PolymarketMarket[]>([])
   const [parlayLegs, setParlayLegs] = useState<ParlayLeg[]>([])
@@ -57,6 +60,9 @@ export default function ParlaysPage() {
   const [confirmedConsent, setConfirmedConsent] = useState(false)
   const [expandedParlays, setExpandedParlays] = useState<Set<string>>(new Set())
   const [solPrice, setSolPrice] = useState<number>(180) // SOL price in USD
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
+  const [paperBalance, setPaperBalance] = useState<number>(0)
+  const [demoMode, setDemoMode] = useState<boolean>(false)
 
   useEffect(() => {
     loadMarkets()
@@ -92,6 +98,35 @@ export default function ParlaysPage() {
     }
   }, [])
 
+  // Load real wallet balance via Helius (custodial wallet)
+  useEffect(() => {
+    if (!address) {
+      setWalletBalance(null)
+      return
+    }
+
+    let intervalId: NodeJS.Timeout | null = null
+
+    const loadWalletBalance = async () => {
+      try {
+        const bal = await fetchWalletBalanceHelius(address)
+        setWalletBalance(bal)
+      } catch {
+        // On failure, treat as 0 as per requirement
+        setWalletBalance(0)
+      }
+    }
+
+    loadWalletBalance()
+    intervalId = setInterval(loadWalletBalance, 30000)
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
+  }, [address])
+
   // Fetch SOL price
   useEffect(() => {
     const fetchSolPrice = async () => {
@@ -113,6 +148,62 @@ export default function ParlaysPage() {
     fetchSolPrice()
     const interval = setInterval(fetchSolPrice, 60000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Load real wallet balance (live mode)
+  useEffect(() => {
+    if (!address) {
+      setWalletBalance(null)
+      return
+    }
+
+    let intervalId: NodeJS.Timeout | null = null
+
+    const loadWalletBalance = async () => {
+      try {
+        const bal = await fetchWalletBalanceHelius(address)
+        setWalletBalance(bal)
+      } catch {
+        setWalletBalance(0)
+      }
+    }
+
+    loadWalletBalance()
+    intervalId = setInterval(loadWalletBalance, 30000)
+
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [address])
+
+  // Sync paper trading balance (demo mode)
+  useEffect(() => {
+    const updatePaperBalance = () => {
+      const state = getPaperTradingState()
+      setPaperBalance(state.balance)
+    }
+    updatePaperBalance()
+    window.addEventListener('paper-trading-updated', updatePaperBalance)
+    return () => {
+      window.removeEventListener('paper-trading-updated', updatePaperBalance)
+    }
+  }, [])
+
+  // Demo mode flag
+  useEffect(() => {
+    setDemoMode(getDemoMode())
+    const handleDemo = (e: Event) => {
+      const enabled = (e as CustomEvent)?.detail?.enabled
+      if (typeof enabled === 'boolean') {
+        setDemoMode(enabled)
+      } else {
+        setDemoMode(getDemoMode())
+      }
+    }
+    window.addEventListener('demo-mode-updated', handleDemo)
+    return () => {
+      window.removeEventListener('demo-mode-updated', handleDemo)
+    }
   }, [])
 
   const loadPlacedParlays = async () => {
@@ -1175,7 +1266,17 @@ export default function ParlaysPage() {
                           }
                           
                         // Calculate payout using shared utility function
-                        const updatedPotentialPayout = calculatePayout(parseFloat(stakeAmount), updatedCombinedOdds)
+                        const stakeVal = parseFloat(stakeAmount)
+                        const updatedPotentialPayout = calculatePayout(stakeVal, updatedCombinedOdds)
+
+                        // Check balance: use demo (paper) or live wallet; require stake + site fee + 1.04 SOL buffer
+                        const totalDeduction = stakeVal + SITE_FEE_SOL
+                        const required = totalDeduction + 1.04
+                        const effectiveBalance = demoMode ? paperBalance : (walletBalance ?? 0)
+                        if (effectiveBalance < required) {
+                          toast.showError(`Insufficient balance. Need ${required.toFixed(4)} SOL (includes 1.04 SOL buffer) — stake ${stakeVal.toFixed(4)} + fee ${SITE_FEE_SOL}, have ${effectiveBalance.toFixed(4)} SOL`)
+                          return
+                        }
                           
                           // Create placed parlay with accurate prices (all stored as decimals 0-1)
                           // stakeAmount is in SOL, combinedOdds is decimal (0-1), potentialPayout is in SOL
@@ -1192,18 +1293,6 @@ export default function ParlaysPage() {
                           // Save parlay using management utility
                           savePlacedParlay(newParlay)
                           
-                          // Deduct total cost (stake + site fee) from balance
-                          const state = getPaperTradingState()
-                          const stakeVal = parseFloat(stakeAmount)
-                          const totalDeduction = stakeVal + SITE_FEE_SOL
-                        if (state.balance < totalDeduction) {
-                          toast.showError(`Insufficient balance. Need ${totalDeduction.toFixed(4)} SOL (${stakeVal.toFixed(4)} stake + ${SITE_FEE_SOL} site fee), have ${state.balance.toFixed(4)} SOL`)
-                            return
-                          }
-                        state.balance -= totalDeduction
-                          localStorage.setItem('paper-trading-state', JSON.stringify(state))
-                          window.dispatchEvent(new CustomEvent('paper-trading-updated'))
-                        
                         // Reload parlays to ensure UI updates
                         await loadPlacedParlays()
                           

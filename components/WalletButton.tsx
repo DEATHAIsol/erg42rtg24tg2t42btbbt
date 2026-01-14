@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { Wallet, Copy, ExternalLink, LogOut } from 'lucide-react'
-import { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js'
-import { getOrCreateWallet, getWallet, getPublicKey, clearWallet } from '@/lib/custodial-wallet'
+import { getOrCreateWallet, getWallet, clearWallet } from '@/lib/custodial-wallet'
+import { fetchWalletBalanceHelius } from '@/lib/helius-api'
+import { getPaperTradingState, setPaperTradingBalance } from '@/lib/paper-trading'
+import { getDemoMode, setDemoMode } from '@/lib/demo-mode'
 import { DepositModal } from './DepositModal'
 import { WalletOnboardingModal } from './WalletOnboardingModal'
 import { useConfirm } from './ConfirmModal'
@@ -11,7 +13,9 @@ import { useConfirm } from './ConfirmModal'
 export function WalletButton() {
   const { confirm } = useConfirm()
   const [wallet, setWallet] = useState<ReturnType<typeof getWallet>>(null)
-  const [balance, setBalance] = useState<number | null>(null)
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
+  const [paperBalance, setPaperBalance] = useState<number>(0)
+  const [demoMode, setDemoModeState] = useState<boolean>(false)
   const [loading, setLoading] = useState(true)
   const [showDeposit, setShowDeposit] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -48,85 +52,61 @@ export function WalletButton() {
     initWallet()
   }, [])
 
-  // Fetch balance
+  // Sync paper trading balance (demo mode)
+  useEffect(() => {
+    const updatePaperBalance = () => {
+      const state = getPaperTradingState()
+      setPaperBalance(state.balance)
+    }
+    updatePaperBalance()
+    window.addEventListener('paper-trading-updated', updatePaperBalance)
+    return () => {
+      window.removeEventListener('paper-trading-updated', updatePaperBalance)
+    }
+  }, [])
+
+  // Load demo mode flag
+  useEffect(() => {
+    setDemoModeState(getDemoMode())
+    const handleDemoMode = (e: Event) => {
+      const enabled = (e as CustomEvent)?.detail?.enabled
+      if (typeof enabled === 'boolean') {
+        setDemoModeState(enabled)
+      } else {
+        setDemoModeState(getDemoMode())
+      }
+    }
+    window.addEventListener('demo-mode-updated', handleDemoMode)
+    return () => {
+      window.removeEventListener('demo-mode-updated', handleDemoMode)
+    }
+  }, [])
+
+  // Fetch balance using Helius API (live mode)
   useEffect(() => {
     if (!wallet) {
-      setBalance(null)
+      setWalletBalance(null)
       return
     }
 
-    // Only fetch if we have a custom RPC URL, otherwise skip to avoid rate limits
-    if (!process.env.NEXT_PUBLIC_SOLANA_RPC_URL) {
-      // No custom RPC URL - don't try to fetch balance to avoid rate limits
-      setBalance(null)
-      return
-    }
-
-    let retryCount = 0
-    const maxRetries = 2
-    let consecutiveFailures = 0
-    const maxConsecutiveFailures = 3
     let intervalId: NodeJS.Timeout | null = null
 
     const fetchBalance = async () => {
-      // Skip if we've hit too many consecutive failures (likely rate limited)
-      if (consecutiveFailures >= maxConsecutiveFailures) {
-        if (intervalId) {
-          clearInterval(intervalId)
-          intervalId = null
-        }
-        return
-      }
-
       try {
-        const endpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl('mainnet-beta')
-        const connection = new Connection(endpoint, 'confirmed')
-        const publicKey = new PublicKey(wallet.publicKey)
-        const bal = await connection.getBalance(publicKey)
-        setBalance(bal / LAMPORTS_PER_SOL)
-        retryCount = 0 // Reset retry count on success
-        consecutiveFailures = 0 // Reset failure count on success
-      } catch (error: any) {
-        consecutiveFailures++
-        
-        // Check if it's a rate limit or access forbidden error
-        const isRateLimit = error?.message?.includes('403') || 
-                           error?.message?.includes('Access forbidden') ||
-                           error?.message?.includes('rate limit') ||
-                           error?.message?.includes('Forbidden') ||
-                           (error?.code === 403) ||
-                           (error?.response?.status === 403)
-        
-        if (isRateLimit) {
-          // Stop trying on rate limit - clear interval and stop
-          if (intervalId) {
-            clearInterval(intervalId)
-            intervalId = null
-          }
-          // Don't update balance, keep last known value
-          return // Exit early, don't retry
-        }
-        
-        // For non-rate-limit errors, only log if it's not a network error
-        if (!error?.message?.includes('fetch') && !error?.message?.includes('network')) {
-          // Only log once per error type to reduce noise
-          if (consecutiveFailures === 1) {
-            console.warn('Failed to fetch balance:', error?.message || error)
-          }
-        }
-        
-        // Don't clear balance on errors, keep last known value
-        if (retryCount < maxRetries && !isRateLimit) {
-          retryCount++
-          // Retry with exponential backoff for non-rate-limit errors
-          setTimeout(fetchBalance, Math.min(2000 * Math.pow(2, retryCount), 10000))
-        }
+        const balance = await fetchWalletBalanceHelius(wallet.publicKey)
+        setWalletBalance(balance)
+      } catch (error) {
+        // fetchWalletBalanceHelius already handles errors and returns 0
+        // But we'll set it explicitly here for clarity
+        setWalletBalance(0)
       }
     }
 
+    // Fetch immediately on wallet load
     fetchBalance()
-    // Increase interval to 60 seconds to reduce rate limit issues
-    intervalId = setInterval(fetchBalance, 60000)
+    
+    // Refresh balance every 30 seconds
+    intervalId = setInterval(fetchBalance, 30000)
     
     return () => {
       if (intervalId) {
@@ -142,6 +122,17 @@ export function WalletButton() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const toggleDemoMode = () => {
+    const next = !demoMode
+    setDemoMode(next)
+    setDemoModeState(next)
+    if (next) {
+      setPaperTradingBalance(100)
+    }
+  }
+
+  const displayBalance = demoMode ? paperBalance : (walletBalance ?? 0)
+
 
   const handleDisconnect = async () => {
     const confirmed = await confirm({
@@ -155,7 +146,9 @@ export function WalletButton() {
     if (confirmed) {
       clearWallet()
       setWallet(null)
-      setBalance(null)
+      setWalletBalance(null)
+      setDemoMode(false)
+      setDemoModeState(false)
     }
   }
 
@@ -180,10 +173,19 @@ export function WalletButton() {
           >
             <Wallet size={15} className="text-terminal-accent" />
             <span className="text-sm font-medium text-terminal-text-primary">
-              {balance !== null 
-                ? `${balance.toFixed(4)} SOL` 
-                : '—'}
+              {`${displayBalance.toFixed(4)} SOL`}
             </span>
+          </button>
+          <button
+            onClick={toggleDemoMode}
+            className={`h-9 px-3 text-xs font-semibold rounded-lg border transition-all ${
+              demoMode
+                ? 'border-terminal-accent text-terminal-accent bg-terminal-accent/10 hover:bg-terminal-accent/20'
+                : 'border-terminal-border text-terminal-text-secondary hover:text-terminal-text-primary hover:border-terminal-accent'
+            }`}
+            title={demoMode ? 'Switch to live mode' : 'Switch to demo mode (100 SOL paper)'}
+          >
+            {demoMode ? 'Live mode' : 'Demo mode'}
           </button>
           
           {/* Address */}
