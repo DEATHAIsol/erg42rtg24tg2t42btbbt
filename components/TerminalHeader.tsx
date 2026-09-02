@@ -238,7 +238,7 @@ export function TerminalHeader() {
                   Sign in
                 </Link>
                 <p className="text-[11px] text-terminal-text-muted text-center pt-1">
-                  Optional — the demo works without one.
+                  Optional. The demo works without one.
                 </p>
               </div>
             </ShowSignedOut>

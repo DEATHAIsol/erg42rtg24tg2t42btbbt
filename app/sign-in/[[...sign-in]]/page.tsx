@@ -33,7 +33,7 @@ export default function SignInPage() {
 
         <div className="mt-8 text-center">
           <p className="text-sm text-terminal-text-secondary mb-3">
-            An account is optional — the terminal and demo trading work without one.
+            An account is optional. The terminal and demo trading work without one.
           </p>
           <Link
             href="/markets"

@@ -16,7 +16,7 @@ const capabilities = [
     key: 'LEVERAGE',
     title: 'Up to 10× on any outcome',
     body:
-      'Size a position with a slider and read the full cost breakdown — margin, fees, payout and ROI — before you commit to it.',
+      'Size a position with a slider and read the full cost breakdown (margin, fees, payout and ROI) before you commit to it.',
   },
   {
     key: 'PARLAY',
@@ -28,7 +28,7 @@ const capabilities = [
     key: 'WALLET',
     title: 'Keys made in your browser',
     body:
-      'A Solana keypair is generated locally the moment you ask for one. Export it whenever you want — it never leaves your device.',
+      'A Solana keypair is generated locally the moment you ask for one. Export it whenever you want. It never leaves your device.',
   },
   {
     key: 'ACCOUNT',
@@ -90,7 +90,7 @@ export default function LandingPage() {
                 </h1>
 
                 <p className="text-lg text-terminal-text-secondary leading-relaxed max-w-lg mb-9">
-                  Probio is a trading desk for real-world outcomes — elections, rate
+                  Probio is a trading desk for real-world outcomes: elections, rate
                   decisions, whatever the world hasn&apos;t settled yet. Live Polymarket
                   order books, leverage and parlays, in one terminal.
                 </p>
@@ -106,7 +106,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right rail: honest, hard numbers — no invented metrics */}
+              {/* Right rail: honest, hard numbers, no invented metrics */}
               <div className="lg:col-span-5 lg:pl-10 lg:border-l lg:border-terminal-border">
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-7">
                   {[
@@ -123,10 +123,6 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </dl>
-                <p className="mt-8 pt-6 border-t border-terminal-border text-xs text-terminal-text-muted leading-relaxed">
-                  Public preview. Order execution is simulated end-to-end while the
-                  settlement layer is finished — prices and books are real.
-                </p>
               </div>
             </div>
           </div>

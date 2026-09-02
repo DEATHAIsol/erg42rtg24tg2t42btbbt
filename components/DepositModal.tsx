@@ -107,7 +107,7 @@ export function DepositModal({ walletAddress, onClose }: DepositModalProps) {
           <div className="p-4 bg-terminal-bg/60 rounded-lg border border-terminal-border">
             <p className="text-xs font-semibold text-terminal-text-primary mb-2">Before you send</p>
             <ul className="text-xs text-terminal-text-secondary space-y-1.5 list-disc list-inside marker:text-terminal-text-muted">
-              <li>Send only SOL on the Solana network — other assets will be lost</li>
+              <li>Send only SOL on the Solana network. Other assets will be lost</li>
               <li>Check the address matches before confirming</li>
               <li>Deposits usually confirm within a minute</li>
             </ul>

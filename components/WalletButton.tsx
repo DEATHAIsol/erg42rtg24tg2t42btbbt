@@ -43,7 +43,7 @@ export function WalletButton() {
     return (
       <div
         className="h-9 flex items-center gap-2 px-3 bg-terminal-bg/80 rounded-lg border border-terminal-border"
-        title="Practice balance — sign in to trade with a real balance"
+        title="Practice balance. Sign in to trade with a real balance"
       >
         <FlaskConical size={14} className="text-terminal-warning" />
         <span className="text-sm font-medium num">
@@ -66,7 +66,7 @@ export function WalletButton() {
           className="h-9 flex items-center gap-2 px-3 bg-terminal-bg/80 rounded-lg border border-terminal-border transition-all enabled:hover:border-terminal-accent/60 disabled:cursor-default"
           title={
             mode === 'demo'
-              ? 'Practice balance — switch to Live to deposit'
+              ? 'Practice balance. Switch to Live to deposit'
               : 'Deposit SOL'
           }
         >
@@ -81,7 +81,7 @@ export function WalletButton() {
           </span>
         </button>
 
-        {/* Live / Demo switch — signed-in only */}
+        {/* Live / Demo switch, signed-in only */}
         {canToggleMode && (
           <div
             className="hidden sm:flex items-center h-9 p-0.5 bg-terminal-bg/80 rounded-lg border border-terminal-border"

@@ -28,7 +28,7 @@ export function SyncIndicator() {
     return (
       <span
         className="hidden lg:inline-flex items-center gap-1.5 px-2 h-9 text-[11px] text-terminal-warning"
-        title="Couldn't reach the sync service — your data is still safe in this browser"
+        title="Couldn't reach the sync service. Your data is still safe in this browser"
       >
         <CloudOff size={11} />
         Offline

@@ -1171,7 +1171,7 @@ export default function ParlaysPage() {
                         const required = totalDeduction + 1.04
                         const effectiveBalance = accountBalance
                         if (effectiveBalance < required) {
-                          toast.showError(`Insufficient balance. Need ${required.toFixed(4)} SOL (includes 1.04 SOL buffer) — stake ${stakeVal.toFixed(4)} + fee ${SITE_FEE_SOL}, have ${effectiveBalance.toFixed(4)} SOL`)
+                          toast.showError(`Insufficient balance. Need ${required.toFixed(4)} SOL (includes 1.04 SOL buffer): stake ${stakeVal.toFixed(4)} + fee ${SITE_FEE_SOL}, have ${effectiveBalance.toFixed(4)} SOL`)
                           return
                         }
                           

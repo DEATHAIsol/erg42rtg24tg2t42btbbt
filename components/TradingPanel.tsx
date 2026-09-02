@@ -191,7 +191,7 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
 
   const handleTrade = async () => {
     if (!isConnected) {
-      toast.showWarning('Still loading your account — try again in a second')
+      toast.showWarning('Still loading your account. Try again in a second')
       return
     }
 
@@ -335,7 +335,7 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-sm font-semibold">Trade</h3>
               {mode === 'demo' ? (
-                <span className="badge-warning !text-[10px]" title="Practice funds — nothing at risk">
+                <span className="badge-warning !text-[10px]" title="Practice funds, nothing at risk">
                   Demo
                 </span>
               ) : (
@@ -684,7 +684,7 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
               <AlertCircle size={15} className="flex-shrink-0 mt-px" />
               <span>
                 {isSignedIn
-                  ? 'Demo mode is on — these orders use practice funds. Switch to Live in the header to trade your real balance.'
+                  ? 'Demo mode is on. These orders use practice funds. Switch to Live in the header to trade your real balance.'
                   : 'You\u2019re trading a demo balance. Create an account to trade a real balance and keep your portfolio across devices.'}
               </span>
             </div>

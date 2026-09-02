@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { TerminalHeader } from '@/components/TerminalHeader'
 import { SiteFooter } from '@/components/SiteFooter'
-import { Droplets, TrendingUp, Landmark, Gift, Clock, Info } from 'lucide-react'
+import { Droplets, TrendingUp, Landmark, Gift, Clock } from 'lucide-react'
 
 // Illustrative target rates for the yield calculator. The pool is not live yet —
 // these are design targets, not live or historical returns.
@@ -34,7 +34,7 @@ export default function LiquidityPage() {
             <div className="max-w-2xl mb-12">
               <div className="badge-warning mb-4">
                 <Clock size={12} />
-                Preview — deposits open at launch
+                Preview: deposits open at launch
               </div>
               <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-4">
                 Back the markets.<br />
@@ -139,14 +139,6 @@ export default function LiquidityPage() {
                 >
                   {activeAction === 'deposit' ? 'Deposits open at launch' : 'Withdrawals open at launch'}
                 </button>
-
-                <div className="mt-4 flex items-start gap-2.5 p-3 bg-terminal-accent/5 border border-terminal-accent/20 rounded-xl">
-                  <Info size={14} className="text-terminal-accent flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-terminal-text-secondary leading-relaxed">
-                    This is a UI preview. Pool contracts are in development — no deposits
-                    are accepted yet. Follow the terminal for launch updates.
-                  </p>
-                </div>
               </div>
 
               {/* Right column: how it works + yield sources */}
@@ -163,8 +155,8 @@ export default function LiquidityPage() {
                       <p className="text-sm text-terminal-text-secondary leading-relaxed max-w-lg">
                         Deposited SOL backs market-making on prediction markets and is put
                         to work across conservative on-chain strategies. Yield accrues to
-                        the pool continuously and your share is claimable at any time —
-                        deposits are never locked.
+                        the pool continuously and your share is claimable at any time.
+                        Deposits are never locked.
                       </p>
                     </div>
                   </div>
@@ -198,10 +190,6 @@ export default function LiquidityPage() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px] text-terminal-text-muted mt-6 leading-relaxed">
-                    Rates shown are design targets for the initial pool composition, not
-                    live or historical returns.
-                  </p>
                 </div>
               </div>
             </div>

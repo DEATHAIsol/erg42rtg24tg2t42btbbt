@@ -38,7 +38,7 @@ export default function SignUpPage() {
             className="inline-flex items-center gap-1.5 text-sm text-terminal-accent hover:text-terminal-accent-hover"
           >
             <ArrowLeft size={14} />
-            Skip — try the demo first
+            Skip and try the demo first
           </Link>
         </div>
       </div>
