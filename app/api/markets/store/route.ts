@@ -13,15 +13,19 @@ const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 // Store all markets in the backend
 export async function POST(request: NextRequest) {
   try {
-    // Clear existing markets to reset database
-    console.log('Clearing existing markets from database...')
-    await dbOperations.clearAll()
-    console.log('Database cleared. Starting fresh market sync...')
+    // NOTE: deliberately NOT clearing the table first. This sync is a long
+    // paginated crawl and any interruption used to leave the catalogue
+    // truncated to whatever had been written so far. upsertMarkets is
+    // idempotent, so syncing over the top is safe and non-destructive.
+    console.log('Starting market sync (non-destructive upsert)...')
 
     // Fetch ALL active markets directly from Gamma API
     let totalStored = 0
     let offset = 0
-    const batchSize = 500 // API limit is 500 per request
+    // Gamma caps a page at 100 regardless of the `limit` we ask for. Requesting
+    // 500 and then advancing the cursor by 500 silently skipped 400 markets
+    // every iteration, which is why only a fraction of the catalogue landed.
+    const batchSize = 100
     const dbBatchSize = 500 // Store in database in batches for better performance
     let hasMore = true
     let consecutiveEmptyBatches = 0
@@ -36,7 +40,7 @@ export async function POST(request: NextRequest) {
     // Increase consecutive empty batch threshold to ensure we get all markets
     while (hasMore && consecutiveEmptyBatches < 10) {
       try {
-        const url = `${GAMMA_API_BASE}/markets?active=true&closed=false&limit=${batchSize}&offset=${offset}`
+        const url = `${GAMMA_API_BASE}/events?active=true&closed=false&limit=${batchSize}&offset=${offset}`
         const response = await fetch(url, {
           headers: {
             'Accept': 'application/json',
@@ -45,22 +49,44 @@ export async function POST(request: NextRequest) {
         })
 
         if (!response.ok) {
-          console.error(`Failed to fetch markets batch at offset ${offset}: ${response.statusText}`)
+          // 422 = offset past the end of the feed: a normal terminator.
+          if (response.status === 422) {
+            console.log(`Reached end of events feed at offset ${offset}`)
+          } else {
+            console.error(`Failed to fetch events at offset ${offset}: ${response.statusText}`)
+          }
           hasMore = false
           break
         }
 
         const data = await response.json()
-        let markets = Array.isArray(data) ? data : (data.data || [])
+        const events = Array.isArray(data) ? data : (data.data || [])
 
-        // Filter for active markets
+        // Advance the cursor by events actually returned, never by what we
+        // requested, otherwise pages get skipped.
+        const returnedCount = events.length
+
+        // Flatten each event's nested markets, inheriting the event's tags
+        // (individual markets carry no category of their own).
+        let markets: any[] = []
+        for (const event of events) {
+          const eventTags = Array.isArray(event?.tags)
+            ? event.tags.map((t: any) => t?.label ?? t?.slug ?? t).filter(Boolean)
+            : []
+          for (const m of event?.markets || []) {
+            markets.push({ ...m, tags: eventTags, category: event?.category })
+          }
+        }
+
+        // Each nested market carries its own lifecycle flags — an open event
+        // can still contain markets that have already resolved.
         markets = markets.filter((market: any) => {
           return market.active !== false && market.closed !== true
         })
 
-        if (!markets || markets.length === 0) {
+        if (returnedCount === 0) {
           consecutiveEmptyBatches++
-          console.log(`Empty batch at offset ${offset}, consecutive empty: ${consecutiveEmptyBatches}`)
+          console.log(`Empty events page at offset ${offset}, consecutive empty: ${consecutiveEmptyBatches}`)
           if (consecutiveEmptyBatches >= 5) {
             console.log('Stopping: 5 consecutive empty batches - no more markets available')
             hasMore = false
@@ -71,7 +97,7 @@ export async function POST(request: NextRequest) {
         }
 
         consecutiveEmptyBatches = 0
-        console.log(`Fetched ${markets.length} markets in batch at offset ${offset}`)
+        console.log(`Fetched ${returnedCount} events -> ${markets.length} open markets at offset ${offset}`)
 
         // Transform markets to match our interface
         const transformedMarkets = markets
@@ -143,7 +169,8 @@ export async function POST(request: NextRequest) {
               marketMakerAddress: market.marketMaker || market.marketMakerAddress,
               active: market.active !== false,
               archived: market.archived || false,
-              closed: market.closed !== false,
+              // `closed === undefined` means open, not closed.
+              closed: market.closed === true,
               resolutionSource: market.resolutionSource || market.resolution_source,
               tags: marketTags,
               createdAt: market.createdAt || market.created_at,
@@ -189,7 +216,7 @@ export async function POST(request: NextRequest) {
 
         // Add to buffer
         batchBuffer.push(...transformedMarkets)
-        offset += batchSize
+        offset += returnedCount
 
         // Store in database when buffer reaches batch size
         if (batchBuffer.length >= dbBatchSize) {
@@ -205,8 +232,8 @@ export async function POST(request: NextRequest) {
         if (markets.length === 0) {
           console.log(`Received 0 markets at offset ${offset} - checking if more exist...`)
           // Don't stop immediately - might be a temporary gap
-        } else if (markets.length < batchSize) {
-          console.log(`Received ${markets.length} markets (less than batch size ${batchSize}) at offset ${offset} - continuing to check for more...`)
+        } else if (returnedCount < batchSize) {
+          console.log(`Received ${returnedCount} markets (short page) at offset ${offset} - continuing...`)
         }
 
         // Log progress every 10 batches
