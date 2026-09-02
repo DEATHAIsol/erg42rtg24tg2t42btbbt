@@ -78,11 +78,9 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Each nested market carries its own lifecycle flags — an open event
-        // can still contain markets that have already resolved.
-        markets = markets.filter((market: any) => {
-          return market.active !== false && market.closed !== true
-        })
+        // Resolved markets are KEPT (stored with closed=1) so the terminal can
+        // offer an Open / Resolved / All filter instead of silently dropping
+        // ~13k markets from the catalogue.
 
         if (returnedCount === 0) {
           consecutiveEmptyBatches++
@@ -182,36 +180,25 @@ export async function POST(request: NextRequest) {
               priceChange24h: priceChange24h,
             } as PolymarketMarket
           })
-          // Filter out markets with no price data and expired markets
-          .filter((market: PolymarketMarket) => {
-            // Check if market has valid price data
-            const hasYesPrice = market.yesPrice !== null && market.yesPrice !== undefined && !isNaN(market.yesPrice) && market.yesPrice > 0 && market.yesPrice < 1
-            const hasNoPrice = market.noPrice !== null && market.noPrice !== undefined && !isNaN(market.noPrice) && market.noPrice > 0 && market.noPrice < 1
-            const hasPriceData = hasYesPrice || hasNoPrice
-            
-            if (!hasPriceData) {
-              return false
-            }
-            
-            // Check if market has expired (endDate is in the past)
+          // Mark rather than discard: a market that has ended or has no
+          // tradeable price is still part of the catalogue.
+          .map((market: any) => {
+            const hasYes =
+              market.yesPrice !== null && market.yesPrice !== undefined &&
+              !isNaN(market.yesPrice) && market.yesPrice > 0 && market.yesPrice < 1
+            const hasNo =
+              market.noPrice !== null && market.noPrice !== undefined &&
+              !isNaN(market.noPrice) && market.noPrice > 0 && market.noPrice < 1
+
+            let ended = false
             if (market.endDate) {
-              try {
-                const endDate = new Date(market.endDate)
-                if (isNaN(endDate.getTime())) {
-                  // Invalid date format, exclude this market
-                  return false
-                }
-                // Exclude markets that have already ended
-                if (endDate < now) {
-                  return false
-                }
-              } catch (error) {
-                // Invalid date, exclude this market
-                return false
-              }
+              const d = new Date(market.endDate)
+              ended = !isNaN(d.getTime()) && d < now
             }
-            
-            return true
+
+            // `closed` drives every "is this tradeable" query.
+            const tradeable = !market.closed && !ended && (hasYes || hasNo)
+            return { ...market, closed: !tradeable }
           })
 
         // Add to buffer

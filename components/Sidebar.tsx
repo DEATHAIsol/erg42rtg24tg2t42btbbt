@@ -3,7 +3,10 @@
 import { ChevronLeft, ChevronRight, Filter, Search, X } from 'lucide-react'
 import { FILTER_CATEGORIES, CATEGORY_LABELS } from '@/lib/category-mapper'
 
+export type MarketStatusFilter = 'open' | 'resolved' | 'all'
+
 export interface MarketFilters {
+  status: MarketStatusFilter
   searchQuery: string
   selectedTags: string[]
   sortBy: 'volume' | 'liquidity' | 'newest' | 'oldest'
@@ -33,6 +36,7 @@ export function Sidebar({ isOpen, onToggle, filters, onFiltersChange, mobileOpen
 
   const clearFilters = () => {
     onFiltersChange({
+      status: 'open',
       searchQuery: '',
       selectedTags: [],
       sortBy: 'volume',
@@ -79,6 +83,30 @@ export function Sidebar({ isOpen, onToggle, filters, onFiltersChange, mobileOpen
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-6 custom-scrollbar">
+        {/* Market status */}
+        <div>
+          <div className="section-label mb-3">Status</div>
+          <div className="flex gap-1 p-1 bg-terminal-bg rounded-lg border border-terminal-border">
+            {([
+              { id: 'open', label: 'Open' },
+              { id: 'resolved', label: 'Resolved' },
+              { id: 'all', label: 'All' },
+            ] as const).map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => updateFilters({ status: opt.id })}
+                className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                  filters.status === opt.id
+                    ? 'bg-terminal-elevated text-terminal-text-primary border border-terminal-border-strong'
+                    : 'text-terminal-text-muted hover:text-terminal-text-primary border border-transparent'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Categories */}
         <div>
           <div className="flex items-center gap-2 mb-3">

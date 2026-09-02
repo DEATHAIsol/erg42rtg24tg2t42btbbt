@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const tags = searchParams.getAll('tags')
     const minVolume = searchParams.get('minVolume')
     const minLiquidity = searchParams.get('minLiquidity')
+    const status = (searchParams.get('status') || 'open') as 'open' | 'resolved' | 'all'
     const minOdds = searchParams.get('minOdds')
     const maxOdds = searchParams.get('maxOdds')
     const sortBy = (searchParams.get('sortBy') || 'volume') as 'volume' | 'liquidity' | 'newest' | 'oldest'
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
         minVolume: minVolume ? parseInt(minVolume) : undefined,
         minLiquidity: minLiquidity ? parseInt(minLiquidity) : undefined,
         minOdds: minOdds ? parseInt(minOdds) / 100 : undefined, // Convert from cents (0-100) to decimal (0-1)
+        status,
         maxOdds: maxOdds ? parseInt(maxOdds) / 100 : undefined,
       },
       sortBy,

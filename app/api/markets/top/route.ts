@@ -12,9 +12,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '500')
     const offset = parseInt(searchParams.get('offset') || '0')
     const sortBy = (searchParams.get('sortBy') || 'volume') as 'volume' | 'liquidity' | 'newest' | 'oldest'
+    const status = (searchParams.get('status') || 'open') as 'open' | 'resolved' | 'all'
 
     // Get top markets from database
-    const { markets, total } = await dbOperations.getTopMarkets(limit, offset, sortBy)
+    const { markets, total } = await dbOperations.getTopMarkets(limit, offset, sortBy, status)
 
     // Trigger price sync for visible markets in the background (non-blocking)
     if (markets.length > 0) {

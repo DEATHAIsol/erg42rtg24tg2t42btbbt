@@ -5,16 +5,31 @@ import fs from 'fs'
 
 // Database file path - use absolute path for better compatibility
 function getDbPath(): string {
-  // In production, you might want to use an environment variable
-  const dbDir = process.env.DATABASE_DIR || path.join(process.cwd(), 'data')
   const dbFile = process.env.DATABASE_FILE || 'markets.db'
-  
-  // Ensure data directory exists
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true })
+
+  // Serverless filesystems (Vercel/Lambda) are read-only apart from /tmp.
+  // Writing to <cwd>/data there throws, the store never populates, and the UI
+  // silently falls back to a tiny direct-API sample. Prefer /tmp when we
+  // detect that environment, and fall back to it if the chosen dir is not
+  // writable for any other reason.
+  const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+  const preferred =
+    process.env.DATABASE_DIR ||
+    (isServerless ? path.join('/tmp', 'probio-data') : path.join(process.cwd(), 'data'))
+
+  const candidates = [preferred, path.join('/tmp', 'probio-data')]
+
+  for (const dir of candidates) {
+    try {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+      fs.accessSync(dir, fs.constants.W_OK)
+      return path.join(dir, dbFile)
+    } catch {
+      // try the next candidate
+    }
   }
-  
-  return path.join(dbDir, dbFile)
+
+  throw new Error('No writable directory available for the market database')
 }
 
 // Initialize database connection
@@ -203,6 +218,15 @@ function rowToMarket(row: any): PolymarketMarket & {
 }
 
 // Database operations
+
+/** Maps a UI status filter onto the lifecycle columns. */
+export type MarketStatus = 'open' | 'resolved' | 'all'
+function statusWhere(status: MarketStatus = 'open'): string {
+  if (status === 'all') return '1 = 1'
+  if (status === 'resolved') return 'closed = 1'
+  return 'active = 1 AND closed = 0'
+}
+
 export const dbOperations = {
   // Insert or update markets (upsert)
   upsertMarkets(markets: PolymarketMarket[]) {
@@ -279,7 +303,8 @@ export const dbOperations = {
   getTopMarkets(
     limit: number,
     offset: number,
-    sortBy: 'volume' | 'liquidity' | 'newest' | 'oldest' = 'volume'
+    sortBy: 'volume' | 'liquidity' | 'newest' | 'oldest' = 'volume',
+    status: MarketStatus = 'open'
   ): { markets: PolymarketMarket[]; total: number } {
     const database = getDb()
     
@@ -298,14 +323,14 @@ export const dbOperations = {
 
     const markets = database.prepare(`
       SELECT * FROM markets
-      WHERE active = 1 AND closed = 0
+      WHERE ${statusWhere(status)}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
     `).all(limit, offset).map(rowToMarket)
 
     const total = database.prepare(`
       SELECT COUNT(*) as count FROM markets
-      WHERE active = 1 AND closed = 0
+      WHERE ${statusWhere(status)}
     `).get() as { count: number }
 
     return { markets, total: total.count }
@@ -320,6 +345,7 @@ export const dbOperations = {
       minLiquidity?: number
       minOdds?: number // 0-1 decimal
       maxOdds?: number // 0-1 decimal
+      status?: MarketStatus
     },
     sortBy: 'volume' | 'liquidity' | 'newest' | 'oldest' = 'volume',
     limit: number,
@@ -327,7 +353,7 @@ export const dbOperations = {
   ): { markets: PolymarketMarket[]; total: number } {
     const database = getDb()
     
-    let whereConditions = ['active = 1', 'closed = 0']
+    let whereConditions = [statusWhere(filters?.status as MarketStatus)]
     const params: any[] = []
 
     // Text search

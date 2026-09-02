@@ -82,6 +82,7 @@ export default function MarketsPage() {
   const [panelExpanded, setPanelExpanded] = useState(true)
 
   const [filters, setFilters] = useState<MarketFilters>({
+    status: 'open',
     searchQuery: '',
     selectedTags: [],
     sortBy: 'volume',
@@ -136,7 +137,7 @@ export default function MarketsPage() {
   useEffect(() => {
     // Reset to page 1 when filters change
     setCurrentPage(1)
-  }, [filters.searchQuery, filters.selectedTags, filters.minVolume, filters.minLiquidity, filters.minOdds, filters.maxOdds, filters.sortBy])
+  }, [filters.status, filters.searchQuery, filters.selectedTags, filters.minVolume, filters.minLiquidity, filters.minOdds, filters.maxOdds, filters.sortBy])
 
   useEffect(() => {
     // Load markets when page or filters change
@@ -146,7 +147,7 @@ export default function MarketsPage() {
     }, 100)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filters.searchQuery, filters.selectedTags, filters.minVolume, filters.minLiquidity, filters.minOdds, filters.maxOdds, filters.sortBy])
+  }, [currentPage, filters.status, filters.searchQuery, filters.selectedTags, filters.minVolume, filters.minLiquidity, filters.minOdds, filters.maxOdds, filters.sortBy])
 
   // Initialize markets in backend
   const initializeMarkets = async () => {
@@ -312,7 +313,7 @@ export default function MarketsPage() {
       }
 
       // If search query exists, search all markets from backend
-      if (filters.searchQuery.trim() || filters.selectedTags.length > 0 || filters.minVolume > 0 || filters.minLiquidity > 0 || filters.minOdds > 0 || filters.maxOdds < 100) {
+      if (filters.status !== 'open' || filters.searchQuery.trim() || filters.selectedTags.length > 0 || filters.minVolume > 0 || filters.minLiquidity > 0 || filters.minOdds > 0 || filters.maxOdds < 100) {
         const searchParams = new URLSearchParams()
         if (filters.searchQuery.trim()) searchParams.append('q', filters.searchQuery.trim())
         filters.selectedTags.forEach(tag => searchParams.append('tags', tag))
@@ -321,6 +322,7 @@ export default function MarketsPage() {
         if (filters.minOdds > 0) searchParams.append('minOdds', String(filters.minOdds))
         if (filters.maxOdds < 100) searchParams.append('maxOdds', String(filters.maxOdds))
         searchParams.append('sortBy', filters.sortBy)
+        searchParams.append('status', filters.status)
         searchParams.append('limit', String(itemsPerPage))
         searchParams.append('offset', String((currentPage - 1) * itemsPerPage))
 
@@ -335,7 +337,7 @@ export default function MarketsPage() {
       } else {
         // Otherwise, get top markets with pagination
         const offset = (currentPage - 1) * itemsPerPage
-        const response = await fetch(`/api/markets/top?limit=${itemsPerPage}&offset=${offset}&sortBy=${filters.sortBy}`)
+        const response = await fetch(`/api/markets/top?limit=${itemsPerPage}&offset=${offset}&sortBy=${filters.sortBy}&status=${filters.status}`)
         if (!response.ok) {
           const errorText = await response.text()
           console.error('Top markets fetch failed:', response.status, errorText)

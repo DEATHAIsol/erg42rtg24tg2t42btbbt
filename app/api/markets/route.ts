@@ -30,32 +30,50 @@ export async function GET(request: NextRequest) {
       tags.forEach(tag => queryParams.append('tags', tag))
     }
 
-    const url = `${GAMMA_API_BASE}/markets?${queryParams.toString()}`
-    
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    })
+    // This is the emergency path used when the market store is unavailable
+    // (e.g. a cold serverless instance). It crawls /events rather than
+    // /markets: /markets silently caps a page at 100 no matter what `limit`
+    // asks for, which is why this fallback used to surface only a couple of
+    // dozen markets.
+    const wanted = Math.min(parseInt(limit || '500', 10) || 500, 3000)
+    const startOffset = parseInt(offset || '0', 10) || 0
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: `Failed to fetch markets: ${response.statusText}` },
-        { status: response.status }
-      )
+    let markets: any[] = []
+    let evOffset = startOffset
+    let pages = 0
+
+    while (markets.length < wanted && pages < 40) {
+      const evUrl =
+        `${GAMMA_API_BASE}/events?active=true&closed=false&limit=100&offset=${evOffset}`
+      const response = await fetch(evUrl, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      })
+
+      // 422 = offset ran past the end of the feed, a normal terminator.
+      if (!response.ok) break
+
+      const data = await response.json()
+      const events = Array.isArray(data) ? data : data.data || []
+      if (events.length === 0) break
+
+      for (const event of events) {
+        const eventTags = Array.isArray(event?.tags)
+          ? event.tags.map((t: any) => t?.label ?? t?.slug ?? t).filter(Boolean)
+          : []
+        for (const m of event?.markets || []) {
+          // Filter as we crawl: an open event still contains resolved markets,
+          // and slicing before filtering is what capped this path so low.
+          if (m?.active === false || m?.closed === true) continue
+          markets.push({ ...m, tags: eventTags, category: event?.category })
+        }
+      }
+
+      evOffset += events.length
+      pages++
     }
 
-    const data = await response.json()
-    
-    // Transform API response to match our interface
-    let markets = []
-    if (Array.isArray(data)) {
-      markets = data
-    } else if (data.data && Array.isArray(data.data)) {
-      markets = data.data
-    }
+    markets = markets.slice(0, wanted)
 
     const transformedMarkets = markets
       .filter((market: any) => {

@@ -46,8 +46,8 @@ if (usePostgres) {
     async searchMarkets(query: string, filters?: any, sortBy?: any, limit?: number, offset?: number) {
       return Promise.resolve(sqliteOps.searchMarkets(query, filters || {}, sortBy, limit, offset))
     },
-    async getTopMarkets(limit: number, offset: number, sortBy?: any) {
-      return Promise.resolve(sqliteOps.getTopMarkets(limit, offset, sortBy))
+    async getTopMarkets(limit: number, offset: number, sortBy?: any, status?: any) {
+      return Promise.resolve(sqliteOps.getTopMarkets(limit, offset, sortBy, status))
     },
     async getStats() {
       return Promise.resolve(sqliteOps.getStats())
