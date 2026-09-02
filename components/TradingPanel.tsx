@@ -108,7 +108,10 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
   }, [priceData, selectedOutcome])
   
   useEffect(() => {
-    // Reload order book when outcome changes
+    // Clear first: the loader deliberately keeps existing data when a book
+    // comes back empty, which meant switching Yes<->No could leave the other
+    // outcome's ladder on screen.
+    setOrderBook({ bids: [], asks: [] })
     loadOrderBook()
   }, [selectedOutcome])
 
@@ -206,10 +209,19 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
     try {
       const outcome = selectedOutcome === 'Yes' ? 'Yes' : 'No'
       const side = 'BUY' as const
-      const size = parseFloat(amount) * leverage
-      const price = orderType === 'market' 
-        ? currentPrice 
+      const price = orderType === 'market'
+        ? currentPrice
         : parseFloat(limitPrice) / 100 // Convert cents to decimal
+
+      if (!(price > 0 && price < 1)) {
+        toast.showError('This market has no tradeable price right now')
+        return
+      }
+
+      // `size` is SHARES, not SOL. Each share pays out 1 SOL if the outcome
+      // resolves true. Passing SOL here made the engine deduct margin * price
+      // instead of margin — i.e. the wrong amount left the balance.
+      const size = (parseFloat(amount) * leverage) / price
 
       // Cost calculation: margin is what user enters, cost is margin * price (actual share cost)
       // Fees are added on top: trading fee (2% of margin) + site fee
@@ -236,7 +248,8 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
         size,
         price,
         orderType,
-        leverage
+        leverage,
+        totalFees
       )
 
       if (!result.success) {
@@ -366,7 +379,7 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
                     <div key={`ask-${idx}`} className="relative flex items-center justify-between text-xs py-0.5 px-2 rounded group hover:bg-terminal-danger/10 transition-colors">
                       <div 
                         className="absolute right-0 top-0 bottom-0 bg-terminal-danger/20 rounded"
-                        style={{ width: `${Math.min(depth * 2, 100)}%` }}
+                        style={{ width: `${Math.min(depth, 100)}%` }}
                       />
                       <span className="relative text-terminal-danger font-medium num">{(askPrice * 100).toFixed(2)}¢</span>
                       <span className="relative text-terminal-text-secondary num">{askSize.toFixed(2)}</span>
@@ -392,7 +405,7 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
                     <div key={`bid-${idx}`} className="relative flex items-center justify-between text-xs py-0.5 px-2 rounded group hover:bg-terminal-success/10 transition-colors">
                       <div 
                         className="absolute left-0 top-0 bottom-0 bg-terminal-success/20 rounded"
-                        style={{ width: `${Math.min(depth * 2, 100)}%` }}
+                        style={{ width: `${Math.min(depth, 100)}%` }}
                       />
                       <span className="relative text-terminal-success font-medium num">{(bidPrice * 100).toFixed(2)}¢</span>
                       <span className="relative text-terminal-text-secondary num">{bidSize.toFixed(2)}</span>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbOperations } from '@/lib/db-adapter'
+import { getLiveMarketById } from '@/lib/market-feed'
 
 // These routes read request state (search params, body) and hit external
 // APIs, so they can never be statically prerendered.
@@ -49,6 +50,15 @@ export async function GET(
       console.warn('Database lookup failed, trying API:', dbError)
     }
     
+    // Gamma's /markets/{id} expects its own numeric id, not a 0x conditionId,
+    // so it 422s for our ids. On a cold instance with no cache that left the
+    // order book without clobTokenIds and it rendered empty. Resolve from the
+    // live feed instead.
+    const live = await getLiveMarketById(marketId)
+    if (live) {
+      return NextResponse.json(live)
+    }
+
     // URL encode the market ID for the API call
     const encodedMarketId = encodeURIComponent(marketId)
     

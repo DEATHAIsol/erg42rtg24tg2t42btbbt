@@ -84,16 +84,21 @@ export function openPosition(
   side: 'BUY' | 'SELL',
   size: number,
   entryPrice: number,
-  leverage: number
+  leverage: number,
+  fees: number = 0
 ): { success: boolean; error?: string; position?: PaperPosition } {
   const state = getPaperTradingState()
-  
-  // Calculate cost: For buying, cost = (size * entryPrice) / leverage
-  // size is the number of shares, entryPrice is the price per share
-  // With leverage, you only need to put up (size * entryPrice) / leverage as margin
-  const cost = (size * entryPrice) / leverage
-  const required = cost + 0.01 // Require at least 1.04 SOL buffer
-  
+
+  if (!(entryPrice > 0 && entryPrice < 1) || !(size > 0) || !isFinite(size)) {
+    return { success: false, error: 'Invalid price or size for this market' }
+  }
+
+  // `size` is shares, so margin = shares * entryPrice / leverage. Fees are
+  // charged on top — previously they were shown in the UI but never deducted.
+  const margin = (size * entryPrice) / leverage
+  const cost = margin + fees
+  const required = cost + 0.01 // small buffer
+
   if (state.balance < required) {
     return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} SOL (including 0.01 SOL buffer), have ${state.balance.toFixed(4)} SOL` }
   }
@@ -110,7 +115,7 @@ export function openPosition(
     openedAt: new Date().toISOString(),
   }
 
-  // Deduct cost from balance
+  // Deduct margin + fees
   state.balance -= cost
   state.positions.push(position)
   saveState(state)
@@ -135,17 +140,11 @@ export function closePosition(
   // Calculate P&L
   // For BUY: P&L = (exitPrice - entryPrice) * size * leverage
   // For SELL: P&L = (entryPrice - exitPrice) * size * leverage
-  let pnl: number
-  if (position.side === 'BUY') {
-    pnl = (exitPrice - position.entryPrice) * position.size * position.leverage
-  } else {
-    pnl = (position.entryPrice - exitPrice) * position.size * position.leverage
-  }
+  const pnl = calculatePositionPnL(position, exitPrice)
 
-  // Return the margin (cost) plus P&L
-  // Original cost was (size * entryPrice) / leverage
-  const originalCost = (position.size * position.entryPrice) / position.leverage
-  state.balance += originalCost + pnl
+  // Return the margin plus P&L. Fees are sunk and are not refunded.
+  const margin = (position.size * position.entryPrice) / position.leverage
+  state.balance += margin + pnl
 
   // Move to trade history
   const closedPosition: PaperPosition = {
@@ -170,21 +169,22 @@ export function placePaperOrder(
   size: number,
   price: number,
   orderType: 'market' | 'limit',
-  leverage: number = 1
+  leverage: number = 1,
+  fees: number = 0
 ): { success: boolean; error?: string; order?: PaperOrder; position?: PaperPosition } {
   const state = getPaperTradingState()
 
   if (orderType === 'market') {
     // Market orders execute immediately
-    const result = openPosition(marketId, marketQuestion, outcome, side, size, price, leverage)
+    const result = openPosition(marketId, marketQuestion, outcome, side, size, price, leverage, fees)
     if (result.success && result.position) {
       return { success: true, position: result.position }
     }
     return result
   } else {
     // Limit orders are stored
-    const cost = (size * price) / leverage
-    const required = cost + 0.01 // Require at least 1.04 SOL buffer
+    const cost = (size * price) / leverage + fees
+    const required = cost + 0.01
     
     if (state.balance < required) {
       return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} SOL (including 0.01 SOL buffer), have ${state.balance.toFixed(4)} SOL` }
@@ -239,12 +239,16 @@ export function cancelOrder(orderId: string): { success: boolean; error?: string
 }
 
 // Get current P&L for a position based on current price
+/**
+ * P&L for a position.
+ *
+ * `size` is the number of shares, and leverage is already reflected in that
+ * count (shares = margin * leverage / entryPrice). Multiplying by leverage
+ * again here double-counted it and inflated every P&L figure.
+ */
 export function calculatePositionPnL(position: PaperPosition, currentPrice: number): number {
-  if (position.side === 'BUY') {
-    return (currentPrice - position.entryPrice) * position.size * position.leverage
-  } else {
-    return (position.entryPrice - currentPrice) * position.size * position.leverage
-  }
+  const direction = position.side === 'BUY' ? 1 : -1
+  return direction * (currentPrice - position.entryPrice) * position.size
 }
 
 // Get all positions with current P&L
