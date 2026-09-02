@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbOperations } from '@/lib/db-adapter'
+import { getLiveMarkets } from '@/lib/market-feed'
 
 // These routes read request state (search params, body) and hit external
 // APIs, so they can never be statically prerendered.
@@ -14,8 +15,38 @@ export async function GET(request: NextRequest) {
     const sortBy = (searchParams.get('sortBy') || 'volume') as 'volume' | 'liquidity' | 'newest' | 'oldest'
     const status = (searchParams.get('status') || 'open') as 'open' | 'resolved' | 'all'
 
-    // Get top markets from database
-    const { markets, total } = await dbOperations.getTopMarkets(limit, offset, sortBy, status)
+    let markets: any[] = []
+    let total = 0
+
+    try {
+      const res = await dbOperations.getTopMarkets(limit, offset, sortBy, status)
+      markets = res.markets
+      total = res.total
+    } catch {
+      // database unavailable — handled by the live fallback below
+    }
+
+    // A cold serverless instance has an empty per-instance cache, which used to
+    // surface as a near-empty catalogue. Serve straight from Polymarket instead.
+    if (total === 0) {
+      const all = await getLiveMarkets()
+      const filtered =
+        status === 'all'
+          ? all
+          : status === 'resolved'
+          ? all.filter((m: any) => m.closed)
+          : all.filter((m: any) => !m.closed && m.active !== false)
+
+      const sorted = [...filtered].sort((a: any, b: any) => {
+        if (sortBy === 'liquidity') return (b.liquidity || 0) - (a.liquidity || 0)
+        if (sortBy === 'newest') return +new Date(b.createdAt || 0) - +new Date(a.createdAt || 0)
+        if (sortBy === 'oldest') return +new Date(a.createdAt || 0) - +new Date(b.createdAt || 0)
+        return (b.volume || 0) - (a.volume || 0)
+      })
+
+      total = sorted.length
+      markets = sorted.slice(offset, offset + limit)
+    }
 
     // Trigger price sync for visible markets in the background (non-blocking)
     if (markets.length > 0) {

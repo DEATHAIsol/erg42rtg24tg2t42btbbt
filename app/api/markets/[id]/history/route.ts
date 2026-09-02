@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbOperations } from '@/lib/db-adapter'
+import { getLiveMarketById } from '@/lib/market-feed'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,13 +30,25 @@ export async function GET(
   const range = RANGES[rangeKey] || RANGES['1w']
 
   try {
-    const market: any = await dbOperations.getMarketById(params.id)
+    let market: any = null
+    try {
+      market = await dbOperations.getMarketById(params.id)
+    } catch {
+      // database unavailable — fall through to the live feed
+    }
 
     let tokenIds: string[] = []
     if (market?.clobTokenIds) {
       tokenIds = Array.isArray(market.clobTokenIds)
         ? market.clobTokenIds
         : JSON.parse(market.clobTokenIds || '[]')
+    }
+
+    // A cold serverless instance has an empty cache, which used to render as
+    // "no price history". Resolve the token straight from Polymarket instead.
+    if (tokenIds.length === 0) {
+      const live = await getLiveMarketById(params.id)
+      if (live?.clobTokenIds?.length) tokenIds = live.clobTokenIds
     }
 
     const yesTokenId = tokenIds[0]

@@ -60,7 +60,7 @@ const contested = (m: PolymarketMarket) => {
 /* ------------------------------------------------------------------ */
 
 export function MarketTicker() {
-  const { markets, status } = useTopMarkets(60)
+  const { markets, status } = useTopMarkets(300)
 
   if (status !== 'ready') {
     return <div className="h-9 border-y border-terminal-border bg-terminal-surface/40" />
@@ -122,7 +122,7 @@ export function MarketTicker() {
 /* ------------------------------------------------------------------ */
 
 export function FeaturedMarkets() {
-  const { markets, status } = useTopMarkets(40)
+  const { markets, status } = useTopMarkets(300)
 
   if (status === 'loading') {
     return (

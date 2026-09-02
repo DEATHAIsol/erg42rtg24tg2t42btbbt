@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbOperations } from '@/lib/db-adapter'
+import { getLiveMarkets } from '@/lib/market-feed'
 
 // These routes read request state (search params, body) and hit external
 // APIs, so they can never be statically prerendered.
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     // Search markets in database
-    const { markets, total } = await dbOperations.searchMarkets(
+    let { markets, total } = await dbOperations.searchMarkets(
       query,
       {
         tags: tags.length > 0 ? tags : undefined,
@@ -35,6 +36,40 @@ export async function GET(request: NextRequest) {
       limit,
       offset
     )
+
+    // Same live fallback as /top: without it a cold instance returns nothing
+    // and every filter looks broken.
+    if (total === 0) {
+      const all = await getLiveMarkets()
+      const q = query.trim().toLowerCase()
+      const wantTags = tags.map((t) => t.toLowerCase())
+      const minV = minVolume ? parseInt(minVolume) : 0
+      const minL = minLiquidity ? parseInt(minLiquidity) : 0
+      const minO = minOdds ? parseInt(minOdds) / 100 : 0
+      const maxO = maxOdds ? parseInt(maxOdds) / 100 : 1
+
+      let filtered = all.filter((m: any) => {
+        if (status === 'resolved' && !m.closed) return false
+        if (status === 'open' && (m.closed || m.active === false)) return false
+        if (q && !m.question?.toLowerCase().includes(q) && !m.description?.toLowerCase().includes(q)) return false
+        if (wantTags.length && !(m.tags || []).some((t: string) => wantTags.includes(t.toLowerCase()))) return false
+        if (minV && (m.volume || 0) < minV) return false
+        if (minL && (m.liquidity || 0) < minL) return false
+        const y = m.yesPrice
+        if (typeof y === 'number' && (y < minO || y > maxO)) return false
+        return true
+      })
+
+      filtered.sort((a: any, b: any) => {
+        if (sortBy === 'liquidity') return (b.liquidity || 0) - (a.liquidity || 0)
+        if (sortBy === 'newest') return +new Date(b.createdAt || 0) - +new Date(a.createdAt || 0)
+        if (sortBy === 'oldest') return +new Date(a.createdAt || 0) - +new Date(b.createdAt || 0)
+        return (b.volume || 0) - (a.volume || 0)
+      })
+
+      total = filtered.length
+      markets = filtered.slice(offset, offset + limit)
+    }
 
     // Trigger price sync for visible markets in the background (non-blocking)
     if (markets.length > 0) {
