@@ -122,14 +122,15 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
       
       // Update prices from order book if available (only if we don't already have prices)
       if (yesBook && yesBook.asks && yesBook.asks.length > 0) {
-        const bestAsk = parseFloat(yesBook.asks[0].price)
+        // Best ask is the LOWEST ask, not the first element of the array.
+        const bestAsk = Math.min(...yesBook.asks.map((a: any) => parseFloat(a.price)))
         if (!isNaN(bestAsk) && isFinite(bestAsk) && bestAsk > 0 && bestAsk < 1) {
           // Only update if we don't have a price already
           setYesPrice((prev: number | null) => prev ?? bestAsk)
         }
       }
       if (noBook && noBook.asks && noBook.asks.length > 0) {
-        const bestAsk = parseFloat(noBook.asks[0].price)
+        const bestAsk = Math.min(...noBook.asks.map((a: any) => parseFloat(a.price)))
         if (!isNaN(bestAsk) && isFinite(bestAsk) && bestAsk > 0 && bestAsk < 1) {
           // Only update if we don't have a price already
           setNoPrice((prev: number | null) => prev ?? bestAsk)
@@ -167,6 +168,21 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
       setLoadingOrderBook(false)
     }
   }
+
+
+  /**
+   * Polymarket returns bids ascending and asks descending, so slicing from the
+   * front yields the *worst* orders — the far tail of the book — which looked
+   * nothing like the quoted price. Sort explicitly instead of trusting order,
+   * and take the levels nearest the spread.
+   */
+  const num = (v: any) => parseFloat(v)
+  const topAsks = [...(orderBook?.asks || [])]
+    .sort((a: any, b: any) => num(b.price) - num(a.price)) // high -> low
+    .slice(-5)                                             // 5 lowest asks
+  const topBids = [...(orderBook?.bids || [])]
+    .sort((a: any, b: any) => num(b.price) - num(a.price)) // high -> low
+    .slice(0, 5)                                           // 5 highest bids
 
   const currentPrice = selectedOutcome === 'Yes' ? (yesPrice ?? market.yesPrice ?? 0.5) : (noPrice ?? market.noPrice ?? 0.5)
 
@@ -341,10 +357,10 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
             <div className="space-y-0.5">
               {/* Asks (Sell orders) - Red */}
               <div className="space-y-0.5 mb-2">
-                {orderBook.asks.slice(0, 5).reverse().map((ask: any, idx: number) => {
+                {topAsks.map((ask: any, idx: number) => {
                   const askPrice = parseFloat(ask.price)
                   const askSize = parseFloat(ask.size)
-                  const depth = (askSize / (orderBook.asks.reduce((sum: number, a: any) => sum + parseFloat(a.size), 0) || 1)) * 100
+                  const depth = (askSize / (topAsks.reduce((sum: number, a: any) => sum + parseFloat(a.size), 0) || 1)) * 100
                   
                   return (
                     <div key={`ask-${idx}`} className="relative flex items-center justify-between text-xs py-0.5 px-2 rounded group hover:bg-terminal-danger/10 transition-colors">
@@ -367,10 +383,10 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
               
               {/* Bids (Buy orders) - Green */}
               <div className="space-y-0.5 mt-2">
-                {orderBook.bids.slice(0, 5).map((bid: any, idx: number) => {
+                {topBids.map((bid: any, idx: number) => {
                   const bidPrice = parseFloat(bid.price)
                   const bidSize = parseFloat(bid.size)
-                  const depth = (bidSize / (orderBook.bids.reduce((sum: number, b: any) => sum + parseFloat(b.size), 0) || 1)) * 100
+                  const depth = (bidSize / (topBids.reduce((sum: number, b: any) => sum + parseFloat(b.size), 0) || 1)) * 100
                   
                   return (
                     <div key={`bid-${idx}`} className="relative flex items-center justify-between text-xs py-0.5 px-2 rounded group hover:bg-terminal-success/10 transition-colors">

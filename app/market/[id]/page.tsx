@@ -371,7 +371,7 @@ export default function MarketPage() {
                           <div className="space-y-1">
                             {/* Asks */}
                             <div className="space-y-0.5 mb-2">
-                              {marketPrice.yes.orderBook.asks?.slice(0, 5).reverse().map((ask: any, idx: number) => (
+                              {[...(marketPrice.yes.orderBook.asks||[])].sort((a:any,b:any)=>parseFloat(b.price)-parseFloat(a.price)).slice(-5).map((ask: any, idx: number) => (
                                 <div key={`yes-ask-${idx}`} className="flex justify-between text-xs py-1">
                                   <span className="text-terminal-danger">{(parseFloat(ask.price) * 100).toFixed(2)}¢</span>
                                   <span className="text-terminal-text-secondary">{parseFloat(ask.size).toFixed(2)}</span>
@@ -387,7 +387,7 @@ export default function MarketPage() {
                             </div>
                             {/* Bids */}
                             <div className="space-y-0.5 mt-2">
-                              {marketPrice.yes.orderBook.bids?.slice(0, 5).map((bid: any, idx: number) => (
+                              {[...(marketPrice.yes.orderBook.bids||[])].sort((a:any,b:any)=>parseFloat(b.price)-parseFloat(a.price)).slice(0,5).map((bid: any, idx: number) => (
                                 <div key={`yes-bid-${idx}`} className="flex justify-between text-xs py-1">
                                   <span className="text-terminal-success">{(parseFloat(bid.price) * 100).toFixed(2)}¢</span>
                                   <span className="text-terminal-text-secondary">{parseFloat(bid.size).toFixed(2)}</span>
@@ -408,7 +408,7 @@ export default function MarketPage() {
                           <div className="space-y-1">
                             {/* Asks */}
                             <div className="space-y-0.5 mb-2">
-                              {marketPrice.no.orderBook.asks?.slice(0, 5).reverse().map((ask: any, idx: number) => (
+                              {[...(marketPrice.no.orderBook.asks||[])].sort((a:any,b:any)=>parseFloat(b.price)-parseFloat(a.price)).slice(-5).map((ask: any, idx: number) => (
                                 <div key={`no-ask-${idx}`} className="flex justify-between text-xs py-1">
                                   <span className="text-terminal-danger">{(parseFloat(ask.price) * 100).toFixed(2)}¢</span>
                                   <span className="text-terminal-text-secondary">{parseFloat(ask.size).toFixed(2)}</span>
@@ -424,7 +424,7 @@ export default function MarketPage() {
                             </div>
                             {/* Bids */}
                             <div className="space-y-0.5 mt-2">
-                              {marketPrice.no.orderBook.bids?.slice(0, 5).map((bid: any, idx: number) => (
+                              {[...(marketPrice.no.orderBook.bids||[])].sort((a:any,b:any)=>parseFloat(b.price)-parseFloat(a.price)).slice(0,5).map((bid: any, idx: number) => (
                                 <div key={`no-bid-${idx}`} className="flex justify-between text-xs py-1">
                                   <span className="text-terminal-success">{(parseFloat(bid.price) * 100).toFixed(2)}¢</span>
                                   <span className="text-terminal-text-secondary">{parseFloat(bid.size).toFixed(2)}</span>
