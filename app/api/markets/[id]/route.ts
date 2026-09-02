@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbOperations } from '@/lib/db-adapter'
 
+// These routes read request state (search params, body) and hit external
+// APIs, so they can never be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 
 export async function GET(

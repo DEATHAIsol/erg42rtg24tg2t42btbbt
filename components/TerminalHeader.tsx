@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Settings, Bell, ChevronDown, Menu, X } from 'lucide-react'
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+import { ShowSignedIn, ShowSignedOut, AccountButton } from './AuthUI'
 import { SyncIndicator } from './SyncIndicator'
 import { WalletButton } from './WalletButton'
 import { SettingsModal } from './SettingsModal'
@@ -155,7 +155,7 @@ export function TerminalHeader() {
 
         {/* Accounts are optional: guests keep full access to the terminal. */}
         <div className="hidden sm:flex items-center gap-2 ml-1.5 pl-2.5 border-l border-terminal-border">
-          <SignedOut>
+          <ShowSignedOut>
             <Link
               href="/sign-in"
               className="terminal-button-ghost !px-2.5 !py-1.5 !text-[13px]"
@@ -168,13 +168,10 @@ export function TerminalHeader() {
             >
               Create account
             </Link>
-          </SignedOut>
-          <SignedIn>
-            <UserButton
-              afterSignOutUrl="/"
-              appearance={{ elements: { avatarBox: 'h-7 w-7' } }}
-            />
-          </SignedIn>
+          </ShowSignedOut>
+          <ShowSignedIn>
+            <AccountButton />
+          </ShowSignedIn>
         </div>
 
         {/* Mobile menu toggle */}
@@ -232,7 +229,7 @@ export function TerminalHeader() {
             </div>
 
             <div className="divider my-2" />
-            <SignedOut>
+            <ShowSignedOut>
               <div className="px-1 pb-1 space-y-2">
                 <Link href="/sign-up" className="terminal-button-primary w-full !py-2.5">
                   Create account
@@ -244,13 +241,13 @@ export function TerminalHeader() {
                   Optional — the demo works without one.
                 </p>
               </div>
-            </SignedOut>
-            <SignedIn>
+            </ShowSignedOut>
+            <ShowSignedIn>
               <div className="flex items-center gap-3 px-3 py-2">
-                <UserButton afterSignOutUrl="/" />
+                <AccountButton />
                 <span className="text-sm text-terminal-text-secondary">Account</span>
               </div>
-            </SignedIn>
+            </ShowSignedIn>
           </nav>
         </div>
       )}

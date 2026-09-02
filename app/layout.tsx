@@ -6,6 +6,9 @@ import { Providers } from '@/components/Providers'
 import { clerkAppearance } from '@/lib/clerk-appearance'
 import { ThemeScript } from '@/components/ThemeScript'
 
+// Inlined at build time; absent keys mean the app runs guest-only.
+const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
@@ -53,9 +56,13 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body>
-        <ClerkProvider appearance={clerkAppearance}>
+        {clerkEnabled ? (
+          <ClerkProvider appearance={clerkAppearance}>
+            <Providers>{children}</Providers>
+          </ClerkProvider>
+        ) : (
           <Providers>{children}</Providers>
-        </ClerkProvider>
+        )}
       </body>
     </html>
   )

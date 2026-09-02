@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// These routes read request state (search params, body) and hit external
+// APIs, so they can never be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 const CLOB_API_BASE = 'https://clob.polymarket.com'
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 

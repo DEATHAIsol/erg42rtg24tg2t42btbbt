@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// These routes read request state (search params, body) and hit external
+// APIs, so they can never be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 
 // Get prices for multiple markets at once (for grid/list views)

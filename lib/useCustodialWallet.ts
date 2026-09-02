@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@clerk/nextjs'
+import { useAuthState } from './auth'
 import { PublicKey } from '@solana/web3.js'
 import { getPaperTradingState } from './paper-trading'
 import { getDemoMode, setDemoMode as persistDemoMode } from './demo-mode'
@@ -18,7 +18,7 @@ export type AccountMode = 'live' | 'demo'
  *               (0 SOL until funded). Demo is an explicit opt-in toggle.
  */
 export function useCustodialWallet() {
-  const { isLoaded, isSignedIn } = useAuth()
+  const { isLoaded, isSignedIn } = useAuthState()
   const [address, setAddress] = useState<string | null>(null)
   const [liveBalance, setLiveBalance] = useState<number | null>(null)
   const [paperBalance, setPaperBalance] = useState(0)

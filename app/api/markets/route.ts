@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { extractMarketTags } from '@/lib/category-mapper'
 import { parseVolume } from '@/lib/format'
 
+// These routes read request state (search params, body) and hit external
+// APIs, so they can never be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 // Gamma API endpoint for fetching markets
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 

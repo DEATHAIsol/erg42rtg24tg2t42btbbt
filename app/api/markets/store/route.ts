@@ -4,6 +4,10 @@ import { PolymarketMarket } from '@/lib/polymarket'
 import { extractMarketTags } from '@/lib/category-mapper'
 import { parseVolume } from '@/lib/format'
 
+// These routes read request state (search params, body) and hit external
+// APIs, so they can never be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 
 // Store all markets in the backend

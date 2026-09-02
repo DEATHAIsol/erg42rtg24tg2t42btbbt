@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useAuth } from '@clerk/nextjs'
+import { useAuthState } from './auth'
 
 /**
  * Mirrors a signed-in user's terminal state to the server so it follows them
@@ -102,7 +102,7 @@ function broadcastRefresh() {
 }
 
 export function useAccountSync() {
-  const { isLoaded, isSignedIn, userId } = useAuth()
+  const { isLoaded, isSignedIn, userId } = useAuthState()
   const [status, setStatus] = useState<SyncStatus>('idle')
   const pushTimerRef = useRef<NodeJS.Timeout | null>(null)
   const pulledForUserRef = useRef<string | null>(null)

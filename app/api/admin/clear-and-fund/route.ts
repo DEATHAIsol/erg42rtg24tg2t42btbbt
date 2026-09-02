@@ -2,6 +2,10 @@
 // This can be called from the browser console or as a one-time operation
 import { NextResponse } from 'next/server'
 
+// These routes read request state (search params, body) and hit external
+// APIs, so they can never be statically prerendered.
+export const dynamic = 'force-dynamic'
+
 export async function POST() {
   // This is a server-side route, but localStorage is client-side only
   // We need to handle this client-side or provide instructions
