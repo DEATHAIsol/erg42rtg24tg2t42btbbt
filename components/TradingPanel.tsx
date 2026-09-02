@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { PolymarketMarket } from '@/lib/polymarket'
-import { TrendingUp, TrendingDown, Layers, Zap, Target, DollarSign, AlertCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, Layers, Zap, Target, AlertCircle } from 'lucide-react'
 import { useCustodialWallet } from '@/lib/useCustodialWallet'
 import { getOrderBook, getBestPrice, placeOrder, OrderType, Side } from '@/lib/clob-client'
-import { placePaperOrder, getPaperTradingState } from '@/lib/paper-trading'
-import { fetchWalletBalanceHelius } from '@/lib/helius-api'
-import { getDemoMode } from '@/lib/demo-mode'
+import { placePaperOrder } from '@/lib/paper-trading'
 import { useToast } from './Toast'
 import { playSuccessSound } from '@/lib/sounds'
 
@@ -22,8 +20,7 @@ interface TradingPanelProps {
 
 export function TradingPanel({ market, priceData }: TradingPanelProps) {
   const toast = useToast()
-  const { publicKey, connected } = useCustodialWallet()
-  const address = publicKey?.toString() || null
+  const { address, balance: accountBalance, balanceUnknown, mode, isSignedIn, connected } = useCustodialWallet()
   const isConnected = connected
   const [selectedOutcome, setSelectedOutcome] = useState<'Yes' | 'No'>('Yes')
   const [amount, setAmount] = useState('')
@@ -35,9 +32,6 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
   const [noPrice, setNoPrice] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
 const [loadingOrderBook, setLoadingOrderBook] = useState(false)
-const [paperBalance, setPaperBalance] = useState(0)
-const [walletBalance, setWalletBalance] = useState<number | null>(null)
-const [demoMode, setDemoMode] = useState<boolean>(false)
 const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in USD
 
   // Fetch SOL price
@@ -70,93 +64,13 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
     // Set up interval to refresh order book every 5 seconds
     const interval = setInterval(loadOrderBook, 5000)
     
-    // Load paper trading balance
-    const updateBalance = () => {
-      const state = getPaperTradingState()
-      setPaperBalance(state.balance)
-    }
-    updateBalance()
-    
-    // Listen for paper trading updates
-    window.addEventListener('paper-trading-updated', updateBalance)
-    
     return () => {
       clearInterval(interval)
-      window.removeEventListener('paper-trading-updated', updateBalance)
     }
   }, [market.id, selectedOutcome])
 
-  // Load real wallet balance (live mode)
-  useEffect(() => {
-    if (!address) {
-      setWalletBalance(null)
-      return
-    }
 
-    let intervalId: NodeJS.Timeout | null = null
 
-    const loadWalletBalance = async () => {
-      try {
-        const bal = await fetchWalletBalanceHelius(address)
-        setWalletBalance(bal)
-      } catch {
-        setWalletBalance(0)
-      }
-    }
-
-    loadWalletBalance()
-    intervalId = setInterval(loadWalletBalance, 30000)
-
-    return () => {
-      if (intervalId) clearInterval(intervalId)
-    }
-  }, [address])
-
-  // Demo mode toggle listener
-  useEffect(() => {
-    setDemoMode(getDemoMode())
-    const handleDemo = (e: Event) => {
-      const enabled = (e as CustomEvent)?.detail?.enabled
-      if (typeof enabled === 'boolean') {
-        setDemoMode(enabled)
-      } else {
-        setDemoMode(getDemoMode())
-      }
-    }
-    window.addEventListener('demo-mode-updated', handleDemo)
-    return () => {
-      window.removeEventListener('demo-mode-updated', handleDemo)
-    }
-  }, [])
-
-  // Load real wallet balance via Helius (custodial wallet)
-  useEffect(() => {
-    if (!address) {
-      setWalletBalance(null)
-      return
-    }
-
-    let intervalId: NodeJS.Timeout | null = null
-
-    const loadWalletBalance = async () => {
-      try {
-        const bal = await fetchWalletBalanceHelius(address)
-        setWalletBalance(bal)
-      } catch {
-        // On failure, treat as 0 as per requirement
-        setWalletBalance(0)
-      }
-    }
-
-    loadWalletBalance()
-    intervalId = setInterval(loadWalletBalance, 30000)
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [address])
   
   useEffect(() => {
     // Update prices from priceData if available
@@ -257,8 +171,8 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
   const currentPrice = selectedOutcome === 'Yes' ? (yesPrice ?? market.yesPrice ?? 0.5) : (noPrice ?? market.noPrice ?? 0.5)
 
   const handleTrade = async () => {
-    if (!isConnected || !address) {
-      toast.showWarning('Please connect your wallet to trade')
+    if (!isConnected) {
+      toast.showWarning('Still loading your account — try again in a second')
       return
     }
 
@@ -289,9 +203,11 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
       const totalFees = tradingFee + SITE_FEE_SOL
       const totalCost = margin + totalFees // Match what's displayed: margin + fees
       const required = totalCost + 0.01 // Add 0.01 SOL buffer
-      const effectiveBalance = demoMode ? paperBalance : (walletBalance ?? 0)
+      const effectiveBalance = accountBalance
       if (effectiveBalance < required) {
-        toast.showError(`Insufficient balance. Need ${required.toFixed(4)} SOL (includes 0.01 SOL buffer), have ${effectiveBalance.toFixed(4)} SOL`)
+        toast.showError(
+          `Insufficient ${mode === 'demo' ? 'demo' : ''} balance. Need ${required.toFixed(4)} SOL (includes 0.01 SOL buffer), have ${effectiveBalance.toFixed(4)} SOL`.replace('  ', ' ')
+        )
         return
       }
 
@@ -311,10 +227,6 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
         toast.showError(result.error || 'Failed to place order')
         return
       }
-
-      // Update balance display
-      const state = getPaperTradingState()
-      setPaperBalance(state.balance)
 
       if (result.position) {
         playSuccessSound()
@@ -357,8 +269,8 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
   // Borrowed amount (what you owe back)
   const borrowed = positionSize - margin
 
-  const displayBalance = demoMode ? paperBalance : (walletBalance ?? 0)
-  const balanceLabel = demoMode ? 'Demo Balance' : 'Balance'
+  const displayBalance = accountBalance
+  const balanceLabel = mode === 'demo' ? 'Demo balance' : 'Balance'
   
   // With leverage: you buy (margin * leverage) worth of shares at currentPrice
   // Gross value if win = positionSize / currentPrice
@@ -389,17 +301,28 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
     <div className="flex flex-col h-full bg-terminal-surface">
       {/* Header */}
       <div className="p-4 border-b border-terminal-border bg-terminal-bg/50">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h3 className="text-sm font-semibold text-terminal-text-secondary mb-1">Trading Interface</h3>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-sm font-semibold">Trade</h3>
+              {mode === 'demo' ? (
+                <span className="badge-warning !text-[10px]" title="Practice funds — nothing at risk">
+                  Demo
+                </span>
+              ) : (
+                <span className="badge !text-[10px]" title="Order execution is simulated in this preview build">
+                  Simulated
+                </span>
+              )}
+            </div>
             <p className="text-xs text-terminal-text-muted line-clamp-1">{market.question}</p>
           </div>
-          <div className="text-right">
+          <div className="text-right flex-shrink-0">
             <div className="text-xs text-terminal-text-muted mb-0.5">{balanceLabel}</div>
-            <div className="text-sm font-bold text-terminal-accent">
-              {displayBalance.toFixed(4)} SOL
+            <div className="text-sm font-bold text-terminal-accent num">
+              {balanceUnknown ? '—' : displayBalance.toFixed(4)} SOL
             </div>
-            <div className="text-xs text-terminal-text-muted">
+            <div className="text-xs text-terminal-text-muted num">
               ${((displayBalance * solPrice)).toFixed(2)}
             </div>
           </div>
@@ -410,8 +333,8 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
         {/* Order Book - Professional Style */}
         <div className="p-4 border-b border-terminal-border bg-terminal-bg/30">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-semibold text-terminal-text-secondary uppercase tracking-wide">Order Book</h4>
-            <span className="text-xs text-terminal-text-muted">{selectedOutcome}</span>
+            <h4 className="section-label">Order Book</h4>
+            <span className={`badge !text-[10px] ${selectedOutcome === 'Yes' ? '!text-terminal-success' : '!text-terminal-danger'}`}>{selectedOutcome}</span>
           </div>
           
           {orderBook && (orderBook.bids?.length > 0 || orderBook.asks?.length > 0) ? (
@@ -429,17 +352,17 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
                         className="absolute right-0 top-0 bottom-0 bg-terminal-danger/20 rounded"
                         style={{ width: `${Math.min(depth * 2, 100)}%` }}
                       />
-                      <span className="relative text-terminal-danger font-medium">{(askPrice * 100).toFixed(2)}¢</span>
-                      <span className="relative text-terminal-text-secondary">{askSize.toFixed(2)}</span>
+                      <span className="relative text-terminal-danger font-medium num">{(askPrice * 100).toFixed(2)}¢</span>
+                      <span className="relative text-terminal-text-secondary num">{askSize.toFixed(2)}</span>
                     </div>
                   )
                 })}
               </div>
               
               {/* Current Price - Highlighted */}
-              <div className="flex items-center justify-between py-2 px-3 bg-terminal-accent/10 border-y border-terminal-accent/30 my-1">
-                <span className="text-sm font-bold text-terminal-accent">{(currentPrice * 100).toFixed(2)}¢</span>
-                <span className="text-xs text-terminal-text-secondary">Current</span>
+              <div className="flex items-center justify-between py-2 px-3 bg-terminal-accent/10 border-y border-terminal-accent/30 my-1 rounded-md">
+                <span className="text-sm font-bold text-terminal-accent num">{(currentPrice * 100).toFixed(2)}¢</span>
+                <span className="text-xs text-terminal-text-secondary">Last price</span>
               </div>
               
               {/* Bids (Buy orders) - Green */}
@@ -455,111 +378,102 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
                         className="absolute left-0 top-0 bottom-0 bg-terminal-success/20 rounded"
                         style={{ width: `${Math.min(depth * 2, 100)}%` }}
                       />
-                      <span className="relative text-terminal-success font-medium">{(bidPrice * 100).toFixed(2)}¢</span>
-                      <span className="relative text-terminal-text-secondary">{bidSize.toFixed(2)}</span>
+                      <span className="relative text-terminal-success font-medium num">{(bidPrice * 100).toFixed(2)}¢</span>
+                      <span className="relative text-terminal-text-secondary num">{bidSize.toFixed(2)}</span>
                     </div>
                   )
                 })}
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-xs text-terminal-text-muted">
-              <Layers className="mx-auto mb-2 opacity-50" size={24} />
-              <p className="text-xs">No order book data available</p>
-              <p className="text-xs mt-1 opacity-75">This market may not have active orders yet</p>
-              <p className="text-xs mt-2 opacity-50">Order book refreshes every 5 seconds</p>
+            <div className="text-center py-8">
+              <div className="w-10 h-10 rounded-xl bg-terminal-elevated border border-terminal-border flex items-center justify-center mx-auto mb-3">
+                <Layers className="text-terminal-text-muted" size={18} />
+              </div>
+              <p className="text-xs font-medium text-terminal-text-secondary">No order book data yet</p>
+              <p className="text-xs mt-1 text-terminal-text-muted">Refreshes automatically every 5 seconds</p>
             </div>
           )}
         </div>
 
         {/* Trading Interface */}
         <div className="p-4 space-y-4">
-          {/* Outcome Selection - Enhanced */}
+          {/* Outcome Selection */}
           <div>
-            <label className="text-xs font-semibold text-terminal-text-secondary mb-2 block uppercase tracking-wide">Select Outcome</label>
+            <label className="section-label mb-2 block">Outcome</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setSelectedOutcome('Yes')}
-                className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${
+                className={`relative p-4 rounded-xl border transition-all duration-200 ${
                   selectedOutcome === 'Yes'
-                    ? 'bg-terminal-success/10 border-terminal-success shadow-lg shadow-terminal-success/20'
-                    : 'bg-terminal-surface border-terminal-border hover:border-terminal-success/50'
+                    ? 'bg-terminal-success/10 border-terminal-success shadow-glow-success'
+                    : 'bg-terminal-bg border-terminal-border hover:border-terminal-success/50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <TrendingUp size={20} className={selectedOutcome === 'Yes' ? 'text-terminal-success' : 'text-terminal-text-secondary'} />
+                <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                  <TrendingUp size={16} className={selectedOutcome === 'Yes' ? 'text-terminal-success' : 'text-terminal-text-secondary'} />
                   <span className={`font-bold text-sm ${selectedOutcome === 'Yes' ? 'text-terminal-success' : 'text-terminal-text-primary'}`}>
                     Yes
                   </span>
                 </div>
-                <div className={`text-lg font-bold ${selectedOutcome === 'Yes' ? 'text-terminal-success' : 'text-terminal-text-primary'}`}>
-                  {yesPrice !== null && yesPrice !== undefined 
-                    ? `${(yesPrice * 100).toFixed(2)}¢` 
+                <div className={`text-lg font-bold num ${selectedOutcome === 'Yes' ? 'text-terminal-success' : 'text-terminal-text-primary'}`}>
+                  {yesPrice !== null && yesPrice !== undefined
+                    ? `${(yesPrice * 100).toFixed(2)}¢`
                     : market.yesPrice !== null && market.yesPrice !== undefined
                     ? `${(market.yesPrice * 100).toFixed(2)}¢`
-                    : 'N/A'}
+                    : '—'}
                 </div>
-                {selectedOutcome === 'Yes' && (
-                  <div className="absolute top-2 right-2">
-                    <div className="w-2 h-2 bg-terminal-success rounded-full animate-pulse" />
-                  </div>
-                )}
               </button>
-              
+
               <button
                 onClick={() => setSelectedOutcome('No')}
-                className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${
+                className={`relative p-4 rounded-xl border transition-all duration-200 ${
                   selectedOutcome === 'No'
-                    ? 'bg-terminal-danger/10 border-terminal-danger shadow-lg shadow-terminal-danger/20'
-                    : 'bg-terminal-surface border-terminal-border hover:border-terminal-danger/50'
+                    ? 'bg-terminal-danger/10 border-terminal-danger shadow-glow-danger'
+                    : 'bg-terminal-bg border-terminal-border hover:border-terminal-danger/50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <TrendingDown size={20} className={selectedOutcome === 'No' ? 'text-terminal-danger' : 'text-terminal-text-secondary'} />
+                <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                  <TrendingDown size={16} className={selectedOutcome === 'No' ? 'text-terminal-danger' : 'text-terminal-text-secondary'} />
                   <span className={`font-bold text-sm ${selectedOutcome === 'No' ? 'text-terminal-danger' : 'text-terminal-text-primary'}`}>
                     No
                   </span>
                 </div>
-                <div className={`text-lg font-bold ${selectedOutcome === 'No' ? 'text-terminal-danger' : 'text-terminal-text-primary'}`}>
-                  {noPrice !== null && noPrice !== undefined 
-                    ? `${(noPrice * 100).toFixed(2)}¢` 
+                <div className={`text-lg font-bold num ${selectedOutcome === 'No' ? 'text-terminal-danger' : 'text-terminal-text-primary'}`}>
+                  {noPrice !== null && noPrice !== undefined
+                    ? `${(noPrice * 100).toFixed(2)}¢`
                     : market.noPrice !== null && market.noPrice !== undefined
                     ? `${(market.noPrice * 100).toFixed(2)}¢`
-                    : 'N/A'}
+                    : '—'}
                 </div>
-                {selectedOutcome === 'No' && (
-                  <div className="absolute top-2 right-2">
-                    <div className="w-2 h-2 bg-terminal-danger rounded-full animate-pulse" />
-                  </div>
-                )}
               </button>
             </div>
           </div>
 
           {/* Order Type Toggle */}
           <div>
-            <label className="text-xs font-semibold text-terminal-text-secondary mb-2 block uppercase tracking-wide">Order Type</label>
-            <div className="flex gap-2 p-1 bg-terminal-bg rounded-lg border border-terminal-border">
+            <label className="section-label mb-2 block">Order Type</label>
+            <div className="flex gap-1 p-1 bg-terminal-bg rounded-lg border border-terminal-border">
               <button
                 onClick={() => setOrderType('market')}
-                className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 ${
+                className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all duration-200 inline-flex items-center justify-center gap-1.5 ${
                   orderType === 'market'
-                    ? 'bg-terminal-accent text-white shadow-md'
-                    : 'text-terminal-text-secondary hover:text-terminal-text-primary'
+                    ? 'bg-terminal-elevated text-terminal-text-primary shadow-sm border border-terminal-border-strong'
+                    : 'text-terminal-text-secondary hover:text-terminal-text-primary border border-transparent'
                 }`}
               >
-                <Zap size={14} className="inline mr-1.5" />
+                <Zap size={13} />
                 Market
               </button>
               <button
                 onClick={() => setOrderType('limit')}
-                className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 ${
+                className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all duration-200 inline-flex items-center justify-center gap-1.5 ${
                   orderType === 'limit'
-                    ? 'bg-terminal-accent text-white shadow-md'
-                    : 'text-terminal-text-secondary hover:text-terminal-text-primary'
+                    ? 'bg-terminal-elevated text-terminal-text-primary shadow-sm border border-terminal-border-strong'
+                    : 'text-terminal-text-secondary hover:text-terminal-text-primary border border-transparent'
                 }`}
               >
-                <Target size={14} className="inline mr-1.5" />
+                <Target size={13} />
                 Limit
               </button>
             </div>
@@ -567,11 +481,19 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
 
           {/* Amount Input */}
           <div>
-            <label className="text-xs font-semibold text-terminal-text-secondary mb-2 block uppercase tracking-wide">
-              Amount (SOL)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="section-label">Amount (SOL)</label>
+              <button
+                onClick={() => {
+                  const usable = Math.max(0, (displayBalance - SITE_FEE_SOL - 0.01) / (1 + TRADING_FEE_PERCENT))
+                  setAmount(usable > 0 ? usable.toFixed(4) : '0')
+                }}
+                className="text-[11px] font-semibold text-terminal-accent hover:text-terminal-accent-hover px-2 py-0.5 rounded bg-terminal-accent/10 border border-terminal-accent/30 hover:bg-terminal-accent/15 transition-colors"
+              >
+                MAX
+              </button>
+            </div>
             <div className="relative">
-              <DollarSign size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-terminal-text-muted" />
               <input
                 type="number"
                 value={amount}
@@ -579,17 +501,22 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
                 placeholder="0.0000"
                 step="0.0001"
                 min="0"
-                className="terminal-input w-full pl-10 pr-4 py-3 text-lg font-semibold bg-terminal-bg border-terminal-border focus:border-terminal-accent"
+                className="terminal-input !py-3 !text-lg font-semibold num pr-14"
               />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-terminal-text-muted pointer-events-none">SOL</span>
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-1.5 mt-2">
               {[1, 5, 10, 50].map((val) => (
                 <button
                   key={val}
                   onClick={() => setAmount(val.toString())}
-                  className="flex-1 py-1.5 text-xs bg-terminal-bg border border-terminal-border rounded hover:border-terminal-accent transition-colors"
+                  className={`flex-1 py-1.5 text-xs rounded-lg border transition-colors num ${
+                    amount === val.toString()
+                      ? 'bg-terminal-accent/10 border-terminal-accent/50 text-terminal-accent'
+                      : 'bg-terminal-bg border-terminal-border text-terminal-text-secondary hover:border-terminal-border-strong hover:text-terminal-text-primary'
+                  }`}
                 >
-                  {val} SOL
+                  {val}
                 </button>
               ))}
             </div>
@@ -597,10 +524,8 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
 
           {/* Limit Price */}
           {orderType === 'limit' && (
-            <div>
-              <label className="text-xs font-semibold text-terminal-text-secondary mb-2 block uppercase tracking-wide">
-                Limit Price (¢)
-              </label>
+            <div className="animate-fade-in">
+              <label className="section-label mb-2 block">Limit Price (¢)</label>
               <input
                 type="number"
                 value={limitPrice}
@@ -609,7 +534,7 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
                 step="0.01"
                 min="0"
                 max="100"
-                className="terminal-input w-full px-4 py-3 text-lg font-semibold bg-terminal-bg border-terminal-border focus:border-terminal-accent"
+                className="terminal-input !py-3 !text-lg font-semibold num"
               />
             </div>
           )}
@@ -617,19 +542,21 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
           {/* Leverage Slider */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-terminal-text-secondary uppercase tracking-wide">Leverage</label>
+              <label className="section-label">Leverage</label>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-terminal-accent">{leverage}x</span>
+                <span className={`text-base font-bold num ${leverage > 1 ? 'text-terminal-accent' : 'text-terminal-text-secondary'}`}>{leverage}x</span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => setLeverage(Math.max(1, leverage - 1))}
-                    className="w-6 h-6 flex items-center justify-center bg-terminal-bg border border-terminal-border rounded hover:border-terminal-accent transition-colors text-xs"
+                    className="w-6 h-6 flex items-center justify-center bg-terminal-bg border border-terminal-border rounded-md hover:border-terminal-border-strong transition-colors text-xs"
+                    aria-label="Decrease leverage"
                   >
                     −
                   </button>
                   <button
                     onClick={() => setLeverage(Math.min(10, leverage + 1))}
-                    className="w-6 h-6 flex items-center justify-center bg-terminal-bg border border-terminal-border rounded hover:border-terminal-accent transition-colors text-xs"
+                    className="w-6 h-6 flex items-center justify-center bg-terminal-bg border border-terminal-border rounded-md hover:border-terminal-border-strong transition-colors text-xs"
+                    aria-label="Increase leverage"
                   >
                     +
                   </button>
@@ -642,12 +569,12 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
               max="10"
               value={leverage}
               onChange={(e) => setLeverage(Number(e.target.value))}
-              className="w-full h-2 bg-terminal-bg rounded-lg appearance-none cursor-pointer accent-terminal-accent"
+              className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-terminal-accent"
               style={{
-                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((leverage - 1) / 9) * 100}%, #1e2338 ${((leverage - 1) / 9) * 100}%, #1e2338 100%)`
+                background: `linear-gradient(to right, #FF7D5A 0%, #FF7D5A ${((leverage - 1) / 9) * 100}%, #262220 ${((leverage - 1) / 9) * 100}%, #262220 100%)`
               }}
             />
-            <div className="flex justify-between text-xs text-terminal-text-muted mt-1">
+            <div className="flex justify-between text-xs text-terminal-text-muted mt-1.5 num">
               <span>1x</span>
               <span>10x</span>
             </div>
@@ -655,79 +582,84 @@ const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in US
 
           {/* Trade Summary */}
           {amount && parseFloat(amount) > 0 && (
-            <div className="p-4 bg-terminal-bg rounded-lg border border-terminal-border">
+            <div className="p-4 bg-terminal-bg rounded-xl border border-terminal-border animate-fade-in">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-semibold text-terminal-text-secondary uppercase tracking-wide">Summary</h4>
-                <span className="text-xs text-terminal-text-muted">SOL ≈ ${solPrice.toFixed(2)}</span>
+                <h4 className="section-label">Summary</h4>
+                <span className="text-xs text-terminal-text-muted num">SOL ≈ ${solPrice.toFixed(2)}</span>
               </div>
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-terminal-text-secondary">Cost</span>
-                  <span className="font-medium">{margin.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${marginUsd.toFixed(2)}</span></span>
+                  <span className="font-medium num">{margin.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${marginUsd.toFixed(2)}</span></span>
                 </div>
                 {leverage > 1 && (
                   <div className="flex justify-between">
                     <span className="text-terminal-text-secondary">Position ({leverage}x)</span>
-                    <span className="font-medium text-terminal-accent">{positionSize.toFixed(4)} SOL</span>
+                    <span className="font-medium text-terminal-accent num">{positionSize.toFixed(4)} SOL</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-terminal-text-secondary">Fees</span>
-                  <span className="font-medium text-terminal-warning">{totalFees.toFixed(4)} SOL</span>
+                  <span className="font-medium text-terminal-warning num">{totalFees.toFixed(4)} SOL</span>
                 </div>
-                <div className="flex justify-between pt-2 border-t border-terminal-border/50">
+                <div className="flex justify-between pt-2 border-t border-terminal-border/60">
                   <span className="text-terminal-text-primary font-medium">Total</span>
-                  <span className="font-bold">{totalCost.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${totalCostUsd.toFixed(2)}</span></span>
+                  <span className="font-bold num">{totalCost.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${totalCostUsd.toFixed(2)}</span></span>
                 </div>
-                <div className="flex justify-between pt-2 border-t border-terminal-border/50">
-                  <span className="text-terminal-text-secondary">Payout if Win</span>
-                  <span className="font-bold text-terminal-success">{potentialPayout.toFixed(4)} SOL <span className="text-xs">${potentialPayoutUsd.toFixed(2)}</span></span>
+                <div className="flex justify-between pt-2 border-t border-terminal-border/60">
+                  <span className="text-terminal-text-secondary">Payout if win</span>
+                  <span className="font-bold text-terminal-success num">{potentialPayout.toFixed(4)} SOL <span className="text-xs">${potentialPayoutUsd.toFixed(2)}</span></span>
                 </div>
                 <div className="flex justify-between text-xs text-terminal-text-muted">
                   <span>ROI</span>
-                  <span className="text-terminal-success font-medium">{totalCost > 0 ? ((potentialProfit / totalCost) * 100).toFixed(1) : 0}%</span>
+                  <span className="text-terminal-success font-medium num">{totalCost > 0 ? ((potentialProfit / totalCost) * 100).toFixed(1) : 0}%</span>
                 </div>
               </div>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="space-y-2 pt-2">
+          <div className="space-y-2 pt-1">
             <button
               onClick={handleTrade}
               disabled={loading || !isConnected || !amount || parseFloat(amount) <= 0}
-              className={`w-full py-4 rounded-lg font-bold text-sm transition-all duration-200 ${
+              className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-200 text-white ${
                 selectedOutcome === 'Yes'
-                  ? 'bg-gradient-to-r from-terminal-success to-green-500 hover:from-green-500 hover:to-terminal-success'
-                  : 'bg-gradient-to-r from-terminal-danger to-red-500 hover:from-red-500 hover:to-terminal-danger'
-              } text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none`}
+                  ? 'bg-terminal-success hover:brightness-110 shadow-glow-success'
+                  : 'bg-terminal-danger hover:brightness-110 shadow-glow-danger'
+              } disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.99]`}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Placing Order...
+                  Placing order…
                 </span>
+              ) : !amount || parseFloat(amount) <= 0 ? (
+                'Enter an amount'
               ) : (
                 `Buy ${selectedOutcome}`
               )}
             </button>
-            
+
             <button
               onClick={addToParlay}
-              className="w-full py-3 rounded-lg border-2 border-terminal-border bg-terminal-surface hover:border-terminal-accent hover:bg-terminal-bg transition-all duration-200 flex items-center justify-center gap-2 font-semibold text-sm"
+              className="terminal-button w-full !py-3"
             >
-              <Layers size={16} />
+              <Layers size={15} />
               <span>Add to Parlay</span>
             </button>
           </div>
 
-          {!isConnected && (
-            <div className="p-3 bg-terminal-warning/10 border border-terminal-warning/30 rounded-lg flex items-center gap-2 text-xs text-terminal-warning">
-              <AlertCircle size={16} />
-              <span>Connect your wallet to place orders</span>
+          {mode === 'demo' && (
+            <div className="p-3 bg-terminal-warning/10 border border-terminal-warning/30 rounded-xl flex items-start gap-2.5 text-xs text-terminal-warning">
+              <AlertCircle size={15} className="flex-shrink-0 mt-px" />
+              <span>
+                {isSignedIn
+                  ? 'Demo mode is on — these orders use practice funds. Switch to Live in the header to trade your real balance.'
+                  : 'You\u2019re trading a demo balance. Create an account to trade a real balance and keep your portfolio across devices.'}
+              </span>
             </div>
           )}
-          
         </div>
       </div>
     </div>

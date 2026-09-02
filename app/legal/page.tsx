@@ -1,21 +1,22 @@
 'use client'
 
 import { TerminalHeader } from '@/components/TerminalHeader'
+import { SiteFooter } from '@/components/SiteFooter'
 
 export default function LegalPage() {
   return (
-    <div className="flex flex-col h-screen bg-terminal-bg">
+    <div className="flex flex-col min-h-screen bg-terminal-bg">
       <TerminalHeader />
-      <main className="flex-1 overflow-auto px-6 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-3">Legal</h1>
-          <p className="text-sm text-terminal-text-secondary mb-6">
+      <main className="flex-1 px-6 py-12 lg:py-16">
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">Legal</h1>
+          <p className="text-base text-terminal-text-secondary mb-8">
             This page provides key legal information about Probio Markets.
           </p>
-          <div className="text-sm text-terminal-text-secondary">
+          <div className="terminal-card p-6 lg:p-8 text-sm text-terminal-text-secondary leading-relaxed">
             <p className="whitespace-pre-line">
               {`ProbioMarkets.com Legal Structure Document
-Document Date: December 20, 2025
+Document Date: August 12, 2026
 Version: 1.0
 
 1. CORPORATE IDENTIFICATION
@@ -395,9 +396,9 @@ Media Inquiries: press@probiomarkets.com
 13.1 Document Control
 
 Version: 1.0
-Effective Date: January 14, 2026
-Last Reviewed: January 14, 2026
-Next Review Date: January 14, 2027
+Effective Date: August 12, 2026
+Last Reviewed: August 12, 2026
+Next Review Date: August 12, 2027
 
 13.2 Amendment Process
 
@@ -449,6 +450,7 @@ HBN Law & Tax acknowledges its role as legal counsel to ProbioMarkets B.V. and c
           </div>
         </div>
       </main>
+      <SiteFooter />
     </div>
   )
 }

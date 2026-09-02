@@ -1,272 +1,151 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Wallet, Copy, ExternalLink, LogOut } from 'lucide-react'
-import { getOrCreateWallet, getWallet, clearWallet } from '@/lib/custodial-wallet'
-import { fetchWalletBalanceHelius } from '@/lib/helius-api'
-import { getPaperTradingState, setPaperTradingBalance } from '@/lib/paper-trading'
-import { getDemoMode, setDemoMode } from '@/lib/demo-mode'
+import { useState } from 'react'
+import { Wallet, Copy, ExternalLink, FlaskConical, Check } from 'lucide-react'
+import { useCustodialWallet } from '@/lib/useCustodialWallet'
 import { DepositModal } from './DepositModal'
-import { WalletOnboardingModal } from './WalletOnboardingModal'
-import { useConfirm } from './ConfirmModal'
 
+/**
+ * Header account strip. Identity is managed entirely through Clerk — there is
+ * no "create wallet" action.
+ *
+ * Guests see a practice balance (demo is forced). Signed-in users see their
+ * real balance and can opt into demo mode with the Live/Demo switch.
+ */
 export function WalletButton() {
-  const { confirm } = useConfirm()
-  const [wallet, setWallet] = useState<ReturnType<typeof getWallet>>(null)
-  const [walletBalance, setWalletBalance] = useState<number | null>(null)
-  const [paperBalance, setPaperBalance] = useState<number>(0)
-  const [demoMode, setDemoModeState] = useState<boolean>(false)
-  const [loading, setLoading] = useState(true)
-  const [showDeposit, setShowDeposit] = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(false)
+  const {
+    address,
+    balance,
+    balanceUnknown,
+    mode,
+    canToggleMode,
+    setMode,
+    isSignedIn,
+    ready,
+  } = useCustodialWallet()
+
   const [copied, setCopied] = useState(false)
+  const [showDeposit, setShowDeposit] = useState(false)
 
-  // Initialize wallet on mount
-  useEffect(() => {
-    const initWallet = () => {
-      try {
-        const existingWallet = getWallet()
-        if (existingWallet) {
-          setWallet(existingWallet)
-          setLoading(false)
-          return
-        }
-
-        // Check if user has completed onboarding
-        const onboardingCompleted = localStorage.getItem('wallet-onboarding-completed')
-        
-        // Create new wallet
-        const w = getOrCreateWallet()
-        setWallet(w)
-        
-        // Show onboarding if this is a new wallet and onboarding hasn't been completed
-        if (!onboardingCompleted) {
-          setShowOnboarding(true)
-        }
-      } catch (error) {
-        console.error('Failed to initialize wallet:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    initWallet()
-  }, [])
-
-  // Sync paper trading balance (demo mode)
-  useEffect(() => {
-    const updatePaperBalance = () => {
-      const state = getPaperTradingState()
-      setPaperBalance(state.balance)
-    }
-    updatePaperBalance()
-    window.addEventListener('paper-trading-updated', updatePaperBalance)
-    return () => {
-      window.removeEventListener('paper-trading-updated', updatePaperBalance)
-    }
-  }, [])
-
-  // Load demo mode flag
-  useEffect(() => {
-    setDemoModeState(getDemoMode())
-    const handleDemoMode = (e: Event) => {
-      const enabled = (e as CustomEvent)?.detail?.enabled
-      if (typeof enabled === 'boolean') {
-        setDemoModeState(enabled)
-      } else {
-        setDemoModeState(getDemoMode())
-      }
-    }
-    window.addEventListener('demo-mode-updated', handleDemoMode)
-    return () => {
-      window.removeEventListener('demo-mode-updated', handleDemoMode)
-    }
-  }, [])
-
-  // Fetch balance using Helius API (live mode)
-  useEffect(() => {
-    if (!wallet) {
-      setWalletBalance(null)
-      return
-    }
-
-    let intervalId: NodeJS.Timeout | null = null
-
-    const fetchBalance = async () => {
-      try {
-        const balance = await fetchWalletBalanceHelius(wallet.publicKey)
-        setWalletBalance(balance)
-      } catch (error) {
-        // fetchWalletBalanceHelius already handles errors and returns 0
-        // But we'll set it explicitly here for clarity
-        setWalletBalance(0)
-      }
-    }
-
-    // Fetch immediately on wallet load
-    fetchBalance()
-    
-    // Refresh balance every 30 seconds
-    intervalId = setInterval(fetchBalance, 30000)
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [wallet])
-
-  const handleCopyAddress = () => {
-    if (!wallet) return
-    navigator.clipboard.writeText(wallet.publicKey)
+  const handleCopy = () => {
+    if (!address) return
+    navigator.clipboard.writeText(address)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const toggleDemoMode = () => {
-    const next = !demoMode
-    setDemoMode(next)
-    setDemoModeState(next)
-    if (next) {
-      setPaperTradingBalance(100)
-    }
+  if (!ready) {
+    return <div className="h-9 w-32 skeleton rounded-lg" aria-label="Loading account" />
   }
 
-  const displayBalance = demoMode ? paperBalance : (walletBalance ?? 0)
-
-
-  const handleDisconnect = async () => {
-    const confirmed = await confirm({
-      title: 'Clear Wallet',
-      message: 'Are you sure you want to clear your wallet?\n\nThis will remove it from this browser. Make sure you have exported your private key first!',
-      confirmText: 'Clear Wallet',
-      cancelText: 'Cancel',
-      type: 'danger',
-    })
-    
-    if (confirmed) {
-      clearWallet()
-      setWallet(null)
-      setWalletBalance(null)
-      setDemoMode(false)
-      setDemoModeState(false)
-    }
-  }
-
-  if (loading) {
+  /* ------------------------------- Guest / demo ----------------------------- */
+  if (!isSignedIn) {
     return (
-      <div className="terminal-button-primary px-4 py-2 flex items-center gap-2 opacity-50">
-        <Wallet size={16} />
-        <span>Loading...</span>
+      <div
+        className="h-9 flex items-center gap-2 px-3 bg-terminal-bg/80 rounded-lg border border-terminal-border"
+        title="Practice balance — sign in to trade with a real balance"
+      >
+        <FlaskConical size={14} className="text-terminal-warning" />
+        <span className="text-sm font-medium num">
+          {balance.toFixed(2)} <span className="text-terminal-text-muted font-sans">SOL</span>
+        </span>
+        <span className="text-[10px] font-medium text-terminal-warning uppercase tracking-wider hidden lg:inline">
+          Demo
+        </span>
       </div>
     )
   }
 
-  if (wallet) {
-    return (
-      <>
-        <div className="flex items-center gap-2">
-          {/* Balance - clickable for deposit */}
-          <button
-            onClick={() => setShowDeposit(true)}
-            className="h-9 flex items-center gap-2 px-3 bg-terminal-bg/80 rounded-lg border border-terminal-border/60 hover:border-terminal-accent/60 hover:bg-terminal-bg transition-all"
-            title="Click to deposit"
-          >
+  /* ------------------------------ Signed-in user ---------------------------- */
+  return (
+    <>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => mode === 'live' && setShowDeposit(true)}
+          disabled={mode === 'demo'}
+          className="h-9 flex items-center gap-2 px-3 bg-terminal-bg/80 rounded-lg border border-terminal-border transition-all enabled:hover:border-terminal-accent/60 disabled:cursor-default"
+          title={
+            mode === 'demo'
+              ? 'Practice balance — switch to Live to deposit'
+              : 'Deposit SOL'
+          }
+        >
+          {mode === 'demo' ? (
+            <FlaskConical size={14} className="text-terminal-warning" />
+          ) : (
             <Wallet size={15} className="text-terminal-accent" />
-            <span className="text-sm font-medium text-terminal-text-primary">
-              {`${displayBalance.toFixed(4)} SOL`}
-            </span>
-          </button>
-          <button
-            onClick={toggleDemoMode}
-            className={`h-9 px-3 text-xs font-semibold rounded-lg border transition-all ${
-              demoMode
-                ? 'border-terminal-accent text-terminal-accent bg-terminal-accent/10 hover:bg-terminal-accent/20'
-                : 'border-terminal-border text-terminal-text-secondary hover:text-terminal-text-primary hover:border-terminal-accent'
-            }`}
-            title={demoMode ? 'Switch to live mode' : 'Switch to demo mode (100 SOL paper)'}
+          )}
+          <span className="text-sm font-medium num">
+            {balanceUnknown ? '—' : balance.toFixed(4)}{' '}
+            <span className="text-terminal-text-muted font-sans">SOL</span>
+          </span>
+        </button>
+
+        {/* Live / Demo switch — signed-in only */}
+        {canToggleMode && (
+          <div
+            className="hidden sm:flex items-center h-9 p-0.5 bg-terminal-bg/80 rounded-lg border border-terminal-border"
+            role="group"
+            aria-label="Balance mode"
           >
-            {demoMode ? 'Live mode' : 'Demo mode'}
-          </button>
-          
-          {/* Address */}
-          <button
-            onClick={handleCopyAddress}
-            className="h-9 px-3 text-xs text-terminal-text-secondary font-mono bg-terminal-bg/80 rounded-lg border border-terminal-border/60 hover:border-terminal-accent/60 hover:text-terminal-text-primary transition-all"
-            title="Copy address"
-          >
-            {copied ? '✓ Copied' : `${wallet.publicKey.slice(0, 4)}...${wallet.publicKey.slice(-4)}`}
-          </button>
-          
-          {/* Action buttons */}
-          <div className="flex items-center">
             <button
-              onClick={() => window.open(`https://solscan.io/account/${wallet.publicKey}`, '_blank')}
-              className="h-9 w-9 flex items-center justify-center text-terminal-text-muted hover:text-terminal-accent hover:bg-terminal-border/30 rounded-lg transition-all"
+              onClick={() => setMode('live')}
+              className={`px-2.5 h-8 rounded-md text-[11px] font-semibold transition-colors ${
+                mode === 'live'
+                  ? 'bg-terminal-elevated text-terminal-text-primary'
+                  : 'text-terminal-text-muted hover:text-terminal-text-secondary'
+              }`}
+              title="Trade your real balance"
+            >
+              Live
+            </button>
+            <button
+              onClick={() => setMode('demo')}
+              className={`px-2.5 h-8 rounded-md text-[11px] font-semibold transition-colors ${
+                mode === 'demo'
+                  ? 'bg-terminal-warning/15 text-terminal-warning'
+                  : 'text-terminal-text-muted hover:text-terminal-text-secondary'
+              }`}
+              title="Practice with simulated funds"
+            >
+              Demo
+            </button>
+          </div>
+        )}
+
+        {address && (
+          <>
+            <button
+              onClick={handleCopy}
+              className="h-9 px-3 text-xs text-terminal-text-secondary font-mono bg-terminal-bg/80 rounded-lg border border-terminal-border hover:border-terminal-accent/60 hover:text-terminal-text-primary transition-all hidden md:inline-flex items-center gap-1.5"
+              title={copied ? 'Copied' : 'Copy address'}
+            >
+              {copied ? (
+                <span className="text-terminal-success inline-flex items-center gap-1">
+                  <Check size={12} /> Copied
+                </span>
+              ) : (
+                <>
+                  {`${address.slice(0, 4)}…${address.slice(-4)}`}
+                  <Copy size={12} className="opacity-60" />
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => window.open(`https://solscan.io/account/${address}`, '_blank')}
+              className="icon-button hidden lg:inline-flex"
               title="View on Solscan"
+              aria-label="View on Solscan"
             >
               <ExternalLink size={15} />
             </button>
-            <button
-              onClick={handleDisconnect}
-              className="h-9 w-9 flex items-center justify-center text-terminal-text-muted hover:text-terminal-danger hover:bg-terminal-danger/10 rounded-lg transition-all"
-              title="Clear wallet"
-            >
-              <LogOut size={15} />
-            </button>
-          </div>
-        </div>
-        {showDeposit && (
-          <DepositModal
-            walletAddress={wallet.publicKey}
-            onClose={() => setShowDeposit(false)}
-          />
+          </>
         )}
-        {showOnboarding && wallet && (
-          <WalletOnboardingModal
-            wallet={wallet}
-            onClose={() => {
-              setShowOnboarding(false)
-              localStorage.setItem('wallet-onboarding-completed', 'true')
-            }}
-            onComplete={() => {
-              setShowOnboarding(false)
-              localStorage.setItem('wallet-onboarding-completed', 'true')
-            }}
-          />
-        )}
-      </>
-    )
-  }
+      </div>
 
-  return (
-    <>
-      <button
-        onClick={() => {
-          const w = getOrCreateWallet()
-          setWallet(w)
-          // Show onboarding for new wallet
-          const onboardingCompleted = localStorage.getItem('wallet-onboarding-completed')
-          if (!onboardingCompleted) {
-            setShowOnboarding(true)
-          }
-        }}
-        className="terminal-button-primary px-4 py-2 flex items-center gap-2"
-      >
-        <Wallet size={16} />
-        <span>Create Wallet</span>
-      </button>
-      {showOnboarding && wallet && (
-        <WalletOnboardingModal
-          wallet={wallet}
-          onClose={() => {
-            setShowOnboarding(false)
-            localStorage.setItem('wallet-onboarding-completed', 'true')
-          }}
-          onComplete={() => {
-            setShowOnboarding(false)
-            localStorage.setItem('wallet-onboarding-completed', 'true')
-          }}
-        />
+      {showDeposit && address && (
+        <DepositModal walletAddress={address} onClose={() => setShowDeposit(false)} />
       )}
     </>
   )

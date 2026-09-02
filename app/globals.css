@@ -2,698 +2,313 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.animate-shimmer {
-  animation: shimmer 3s ease-in-out infinite;
-}
-
-/* Custom scrollbar styles */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.3);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.5);
-}
-
 /* Solana Wallet Adapter Styles */
 @import '@solana/wallet-adapter-react-ui/styles.css';
 
 @layer base {
+  /* ---------- Theme tokens ---------- */
+  :root,
+  [data-theme='dark'] {
+    --c-bg: 10 9 8;
+    --c-surface: 18 16 15;
+    --c-elevated: 25 22 20;
+    --c-border: 38 34 32;
+    --c-border-strong: 56 50 46;
+    --c-accent: 255 125 90;
+    --c-accent-hover: 255 149 120;
+    --c-ink: 20 13 10;
+    --c-success: 47 212 140;
+    --c-danger: 246 70 93;
+    --c-warning: 240 185 11;
+    --c-text-primary: 245 242 239;
+    --c-text-secondary: 163 156 149;
+    --c-text-muted: 108 102 96;
+
+    --chart-bg: #12100F;
+    --chart-text: #A39C95;
+    --chart-grid: #1E1B19;
+    --chart-border: #262220;
+    --chart-line: #FF7D5A;
+
+    color-scheme: dark;
+  }
+
+  [data-theme='light'] {
+    --c-bg: 250 249 247;
+    --c-surface: 255 255 255;
+    --c-elevated: 244 241 238;
+    --c-border: 226 221 215;
+    --c-border-strong: 202 195 187;
+    --c-accent: 214 78 42;
+    --c-accent-hover: 186 64 32;
+    --c-ink: 255 255 255;
+    --c-success: 13 148 96;
+    --c-danger: 200 40 62;
+    --c-warning: 166 124 0;
+    --c-text-primary: 26 22 20;
+    --c-text-secondary: 94 87 81;
+    --c-text-muted: 138 130 122;
+
+    --chart-bg: #FFFFFF;
+    --chart-text: #5E5751;
+    --chart-grid: #EFEBE7;
+    --chart-border: #E2DDD7;
+    --chart-line: #D64E2A;
+
+    color-scheme: light;
+  }
+
   * {
     @apply border-terminal-border;
   }
-  
-  body {
-    @apply bg-terminal-bg text-terminal-text-primary font-mono;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+
+  html {
+    scroll-behavior: smooth;
   }
 
-  /* Custom scrollbar */
+  body {
+    @apply bg-terminal-bg text-terminal-text-primary font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgba(255, 125, 90, 0.3);
+  }
+
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+
+  /* Scrollbars */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-terminal-surface;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-terminal-border rounded;
+    @apply bg-terminal-border rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-terminal-accent;
+    @apply bg-terminal-border-strong;
+  }
+
+  /* Remove number input spinners for cleaner inputs */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
+  /* ---------- Cards ---------- */
   .terminal-card {
-    @apply bg-terminal-surface border border-terminal-border rounded-lg p-4;
+    @apply bg-terminal-surface border border-terminal-border rounded-card shadow-card;
   }
 
+  .card-interactive {
+    @apply terminal-card cursor-pointer transition-all duration-200;
+  }
+  .card-interactive:hover {
+    @apply border-terminal-border-strong shadow-card-hover -translate-y-0.5;
+  }
+
+  /* ---------- Buttons ---------- */
   .terminal-button {
-    @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
-    @apply bg-terminal-surface border border-terminal-border;
-    @apply hover:bg-terminal-border hover:border-terminal-accent;
-    @apply active:scale-95;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium;
+    @apply bg-terminal-elevated border border-terminal-border text-terminal-text-primary;
+    @apply transition-all duration-150 hover:border-terminal-border-strong hover:bg-terminal-border/40;
+    @apply active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
   }
 
   .terminal-button-primary {
-    @apply bg-terminal-accent border-terminal-accent text-white;
-    @apply hover:bg-blue-600 hover:border-blue-600;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold;
+    @apply bg-terminal-accent text-terminal-ink border border-transparent;
+    @apply transition-all duration-150 hover:bg-terminal-accent-hover hover:shadow-glow-accent;
+    @apply active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none;
   }
 
+  .terminal-button-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium;
+    @apply text-terminal-text-secondary transition-colors duration-150;
+    @apply hover:text-terminal-text-primary hover:bg-terminal-elevated;
+    @apply disabled:opacity-40 disabled:pointer-events-none;
+  }
+
+  .icon-button {
+    @apply h-9 w-9 inline-flex items-center justify-center rounded-lg text-terminal-text-muted;
+    @apply transition-colors duration-150 hover:text-terminal-text-primary hover:bg-terminal-elevated;
+  }
+
+  /* ---------- Inputs ---------- */
   .terminal-input {
-    @apply bg-terminal-surface border border-terminal-border rounded-md px-3 py-2;
-    @apply text-terminal-text-primary placeholder-terminal-text-muted;
-    @apply focus:outline-none focus:ring-2 focus:ring-terminal-accent focus:border-transparent;
-    @apply transition-all duration-200;
-  }
-
-  /* Professional trading interface enhancements */
-  .trading-card {
-    @apply bg-terminal-surface border border-terminal-border rounded-lg;
-    @apply shadow-lg shadow-black/20;
-  }
-
-  .order-book-row {
+    @apply w-full bg-terminal-bg border border-terminal-border rounded-lg px-3 py-2 text-sm;
+    @apply text-terminal-text-primary placeholder:text-terminal-text-muted;
     @apply transition-all duration-150;
+    @apply focus:outline-none focus:border-terminal-accent focus:ring-2 focus:ring-terminal-accent/15;
   }
 
-  .order-book-row:hover {
-    @apply bg-opacity-50;
+  .terminal-select {
+    @apply terminal-input appearance-none pr-9 bg-no-repeat cursor-pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23A39C95' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
   }
 
-  /* 3D Vault/Safe Styles */
-  .perspective-1000 {
-    perspective: 1200px;
-    perspective-origin: center center;
+  /* ---------- Labels / badges ---------- */
+  .section-label {
+    @apply font-mono text-[11px] font-medium text-terminal-text-secondary uppercase tracking-[0.14em];
   }
 
-  .vault-container {
-    position: relative;
-    width: 420px;
-    height: 420px;
-    transform-style: preserve-3d;
-    animation: vaultFloat 8s ease-in-out infinite;
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-terminal-elevated border border-terminal-border text-terminal-text-secondary;
   }
 
-  @keyframes vaultFloat {
-    0%, 100% {
-      transform: translateY(0px) rotateY(-8deg) rotateX(2deg);
-    }
-    50% {
-      transform: translateY(-15px) rotateY(8deg) rotateX(-2deg);
-    }
+  .badge-accent {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-terminal-accent/10 border border-terminal-accent/30 text-terminal-accent;
   }
 
-  .vault-safe {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-    transform: rotateY(-12deg) rotateX(5deg);
+  .badge-success {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-terminal-success/10 border border-terminal-success/30 text-terminal-success;
   }
 
-  .vault-face {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    /* Brushed steel/metallic appearance */
-    background: 
-      /* Brushed metal texture */
-      repeating-linear-gradient(
-        90deg,
-        rgba(60, 65, 75, 0.3) 0px,
-        rgba(60, 65, 75, 0.3) 1px,
-        transparent 1px,
-        transparent 2px
-      ),
-      /* Main metallic gradient */
-      linear-gradient(135deg, 
-        rgba(70, 75, 85, 0.95) 0%,
-        rgba(50, 55, 65, 1) 20%,
-        rgba(40, 45, 55, 1) 50%,
-        rgba(35, 40, 50, 1) 80%,
-        rgba(30, 35, 45, 1) 100%);
-    /* Reinforced border - thicker and more industrial */
-    border: 6px solid rgba(80, 85, 95, 0.8);
-    border-radius: 24px;
-    box-shadow: 
-      /* Inner shadows for depth */
-      inset 0 0 120px rgba(0, 0, 0, 0.95),
-      inset 0 0 60px rgba(0, 0, 0, 0.7),
-      inset 0 0 30px rgba(59, 130, 246, 0.15),
-      /* Outer shadows for 3D effect */
-      0 40px 120px rgba(0, 0, 0, 0.9),
-      0 20px 60px rgba(0, 0, 0, 0.7),
-      0 0 180px rgba(59, 130, 246, 0.2),
-      0 0 250px rgba(59, 130, 246, 0.1),
-      /* Highlight on top edge */
-      inset 0 2px 4px rgba(255, 255, 255, 0.1);
-    transform: translateZ(30px);
-    overflow: hidden;
-    /* Enhanced metallic reflection effects */
-    background-image: 
-      /* Top highlight */
-      linear-gradient(180deg, 
-        rgba(255, 255, 255, 0.15) 0%,
-        transparent 15%),
-      /* Side highlights */
-      linear-gradient(90deg,
-        rgba(255, 255, 255, 0.08) 0%,
-        transparent 20%,
-        transparent 80%,
-        rgba(255, 255, 255, 0.08) 100%),
-      /* Center reflection */
-      radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.12) 0%, transparent 60%),
-      /* Bottom shadow */
-      linear-gradient(0deg,
-        transparent 0%,
-        rgba(0, 0, 0, 0.3) 100%);
-    /* Add subtle pattern for industrial look */
-    background-blend-mode: overlay, normal, overlay, overlay, normal;
+  .badge-danger {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-terminal-danger/10 border border-terminal-danger/30 text-terminal-danger;
   }
-  
-  /* Reinforced corner panels */
-  .vault-face::before {
+
+  .badge-warning {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-terminal-warning/10 border border-terminal-warning/30 text-terminal-warning;
+  }
+
+  /* ---------- Numbers ---------- */
+  .num {
+    @apply font-mono;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- Skeleton loaders ---------- */
+  .skeleton {
+    @apply rounded-md bg-terminal-elevated relative overflow-hidden;
+  }
+  .skeleton::after {
     content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 24px;
-    background: 
-      /* Corner reinforcement panels */
-      linear-gradient(90deg,
-        rgba(90, 95, 105, 0.4) 0%,
-        transparent 8%,
-        transparent 92%,
-        rgba(90, 95, 105, 0.4) 100%),
-      linear-gradient(0deg,
-        rgba(90, 95, 105, 0.4) 0%,
-        transparent 8%,
-        transparent 92%,
-        rgba(90, 95, 105, 0.4) 100%);
-    pointer-events: none;
-    z-index: 1;
-  }
-  
-  /* Center panel for dial area */
-  .vault-face::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 280px;
-    height: 280px;
-    border-radius: 50%;
-    background: radial-gradient(circle,
-      rgba(50, 55, 65, 0.6) 0%,
-      rgba(40, 45, 55, 0.8) 50%,
-      transparent 100%);
-    box-shadow: 
-      inset 0 0 40px rgba(0, 0, 0, 0.6),
-      inset 0 0 20px rgba(59, 130, 246, 0.1);
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  .vault-edge {
-    position: absolute;
-    /* More metallic edge appearance */
-    background: linear-gradient(135deg, 
-      rgba(35, 40, 50, 1) 0%,
-      rgba(50, 55, 65, 0.95) 30%,
-      rgba(40, 45, 55, 0.95) 70%,
-      rgba(30, 35, 45, 1) 100%);
-    border: 2px solid rgba(70, 75, 85, 0.6);
-    box-shadow: 
-      inset 0 0 30px rgba(0, 0, 0, 0.9),
-      inset 0 0 15px rgba(59, 130, 246, 0.1),
-      0 3px 10px rgba(0, 0, 0, 0.7),
-      0 1px 4px rgba(0, 0, 0, 0.5);
-    /* Add subtle metallic texture */
-    background-image: 
-      repeating-linear-gradient(
-        45deg,
-        rgba(60, 65, 75, 0.2) 0px,
-        rgba(60, 65, 75, 0.2) 1px,
-        transparent 1px,
-        transparent 3px
-      );
-  }
-
-  .vault-edge.edge-top {
-    top: -20px;
-    left: 0;
-    right: 0;
-    height: 20px;
-    transform: rotateX(90deg) translateZ(10px);
-    transform-origin: bottom;
-    border-radius: 32px 32px 0 0;
-  }
-
-  .vault-edge.edge-bottom {
-    bottom: -20px;
-    left: 0;
-    right: 0;
-    height: 20px;
-    transform: rotateX(-90deg) translateZ(10px);
-    transform-origin: top;
-    border-radius: 0 0 32px 32px;
-  }
-
-  .vault-edge.edge-left {
-    left: -20px;
-    top: 0;
-    bottom: 0;
-    width: 20px;
-    transform: rotateY(-90deg) translateZ(10px);
-    transform-origin: right;
-    border-radius: 32px 0 0 32px;
-  }
-
-  .vault-edge.edge-right {
-    right: -20px;
-    top: 0;
-    bottom: 0;
-    width: 20px;
-    transform: rotateY(90deg) translateZ(10px);
-    transform-origin: left;
-    border-radius: 0 32px 32px 0;
-  }
-
-  /* Circular Dial Mechanism */
-  .vault-dial {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 200px;
-    height: 200px;
-    z-index: 10;
-  }
-
-  .dial-outer-ring {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 200px;
-    height: 200px;
-    border: 4px solid rgba(100, 110, 130, 0.6);
-    border-radius: 50%;
-    background: radial-gradient(circle,
-      rgba(50, 55, 70, 0.9) 0%,
-      rgba(30, 35, 50, 0.95) 50%,
-      rgba(20, 25, 40, 1) 100%);
-    box-shadow: 
-      inset 0 0 30px rgba(0, 0, 0, 0.8),
-      inset 0 0 15px rgba(59, 130, 246, 0.2),
-      0 0 40px rgba(59, 130, 246, 0.15),
-      0 8px 24px rgba(0, 0, 0, 0.6);
-    animation: dialRotate 25s linear infinite;
-  }
-
-  @keyframes dialRotate {
-    from {
-      transform: translate(-50%, -50%) rotate(0deg);
-    }
-    to {
-      transform: translate(-50%, -50%) rotate(360deg);
-    }
-  }
-
-  .dial-inner-ring {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 160px;
-    height: 160px;
-    border: 3px solid rgba(80, 90, 110, 0.5);
-    border-radius: 50%;
-    background: radial-gradient(circle,
-      rgba(40, 45, 60, 0.95) 0%,
-      rgba(25, 30, 45, 1) 100%);
-    box-shadow: 
-      inset 0 0 20px rgba(0, 0, 0, 0.7),
-      inset 0 0 10px rgba(59, 130, 246, 0.15),
-      0 0 30px rgba(59, 130, 246, 0.1);
-  }
-
-  .dial-center-disc {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100px;
-    height: 100px;
-    background: radial-gradient(circle,
-      rgba(60, 65, 80, 1) 0%,
-      rgba(35, 40, 55, 1) 50%,
-      rgba(20, 25, 40, 1) 100%);
-    border: 2px solid rgba(59, 130, 246, 0.4);
-    border-radius: 50%;
-    box-shadow: 
-      inset 0 0 25px rgba(0, 0, 0, 0.8),
-      inset 0 0 12px rgba(59, 130, 246, 0.2),
-      0 0 35px rgba(59, 130, 246, 0.2),
-      0 4px 16px rgba(0, 0, 0, 0.7);
-    /* Highly reflective surface */
-    background-image: 
-      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 40%),
-      radial-gradient(circle at 70% 70%, rgba(59, 130, 246, 0.2) 0%, transparent 40%);
-  }
-
-  .dial-cross-bar {
-    position: absolute;
-    background: linear-gradient(90deg,
+    @apply absolute inset-0 animate-shimmer;
+    background: linear-gradient(
+      90deg,
       transparent 0%,
-      rgba(100, 110, 130, 0.8) 20%,
-      rgba(120, 130, 150, 1) 50%,
-      rgba(100, 110, 130, 0.8) 80%,
-      transparent 100%);
-    box-shadow: 
-      0 0 8px rgba(59, 130, 246, 0.4),
-      inset 0 1px 2px rgba(255, 255, 255, 0.2);
+      rgb(var(--c-text-primary) / 0.06) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
   }
 
-  .dial-bar-horizontal {
-    top: 50%;
-    left: 10%;
-    right: 10%;
-    height: 3px;
-    transform: translateY(-50%);
+  /* ---------- Modal shell ---------- */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    @apply bg-black/60 backdrop-blur-sm animate-fade-in;
   }
 
-  .dial-bar-vertical {
-    left: 50%;
-    top: 10%;
-    bottom: 10%;
-    width: 3px;
-    transform: translateX(-50%);
+  .modal-panel {
+    @apply bg-terminal-surface border border-terminal-border rounded-2xl shadow-modal w-full animate-scale-in;
+    @apply overflow-hidden;
   }
 
-  .dial-center-dot {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
-    background: rgba(59, 130, 246, 0.9);
-    border-radius: 50%;
-    box-shadow: 
-      0 0 12px rgba(59, 130, 246, 0.8),
-      0 0 24px rgba(59, 130, 246, 0.4);
-    animation: dotPulse 2s ease-in-out infinite;
+  /* Overlay scrolls as a last resort on very short viewports. */
+  .modal-overlay {
+    @apply overflow-y-auto;
   }
 
-  @keyframes dotPulse {
-    0%, 100% {
-      opacity: 0.9;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1.3);
-    }
+  /* ---------- Decorative backgrounds ---------- */
+  .bg-grid {
+    background-image: linear-gradient(rgb(var(--c-text-primary) / 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--c-text-primary) / 0.03) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 75%);
   }
 
-  .dial-marker {
-    position: absolute;
-    width: 3px;
-    height: 12px;
-    background: linear-gradient(180deg,
-      rgba(100, 110, 130, 0.9) 0%,
-      rgba(60, 70, 90, 0.7) 100%);
-    box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+  /* Hairline rules used as editorial dividers */
+  .rule {
+    @apply h-px w-full bg-gradient-to-r from-terminal-border via-terminal-border-strong to-transparent;
   }
 
-  .dial-marker.marker-0 {
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+  /* Marquee ticker */
+  .marquee {
+    @apply flex overflow-hidden select-none;
+  }
+  .marquee-track {
+    @apply flex shrink-0 items-center animate-marquee;
+  }
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
   }
 
-  .dial-marker.marker-90 {
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%) rotate(90deg);
+  .orb {
+    @apply absolute rounded-full pointer-events-none;
+    filter: blur(90px);
   }
 
-  .dial-marker.marker-180 {
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+  /* ---------- Misc ---------- */
+  .divider {
+    @apply border-t border-terminal-border;
   }
 
-  .dial-marker.marker-270 {
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%) rotate(90deg);
-  }
-
-  .vault-handle {
-    position: absolute;
-    bottom: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 140px;
-    height: 50px;
-    z-index: 10;
-  }
-
-  .handle-base {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 10px;
-    background: linear-gradient(90deg,
-      rgba(35, 40, 55, 1) 0%,
-      rgba(55, 60, 75, 1) 30%,
-      rgba(65, 70, 85, 1) 50%,
-      rgba(55, 60, 75, 1) 70%,
-      rgba(35, 40, 55, 1) 100%);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    border-radius: 5px;
-    box-shadow: 
-      0 3px 10px rgba(0, 0, 0, 0.6),
-      inset 0 1px 3px rgba(255, 255, 255, 0.1),
-      inset 0 -1px 3px rgba(0, 0, 0, 0.5);
-  }
-
-  .handle-grip {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 28px;
-    background: linear-gradient(135deg,
-      rgba(25, 30, 45, 1) 0%,
-      rgba(45, 50, 65, 1) 50%,
-      rgba(30, 35, 50, 1) 100%);
-    border: 2px solid rgba(59, 130, 246, 0.4);
-    border-radius: 14px;
-    box-shadow: 
-      0 6px 16px rgba(0, 0, 0, 0.7),
-      inset 0 3px 6px rgba(0, 0, 0, 0.4),
-      inset 0 -2px 4px rgba(255, 255, 255, 0.05);
-    /* Grip texture */
-    background-image: 
-      repeating-linear-gradient(90deg,
-        transparent 0px,
-        transparent 8px,
-        rgba(0, 0, 0, 0.2) 8px,
-        rgba(0, 0, 0, 0.2) 10px);
-  }
-
-  .vault-rivet {
-    position: absolute;
-    width: 24px;
-    height: 24px;
-    background: radial-gradient(circle,
-      rgba(85, 90, 100, 1) 0%,
-      rgba(60, 65, 75, 1) 30%,
-      rgba(40, 45, 55, 1) 60%,
-      rgba(25, 30, 40, 1) 100%);
-    border: 2px solid rgba(100, 105, 115, 0.6);
-    border-radius: 50%;
-    box-shadow: 
-      /* Inner depth */
-      inset 0 2px 4px rgba(0, 0, 0, 0.8),
-      inset 0 -1px 2px rgba(255, 255, 255, 0.1),
-      /* Outer shadow */
-      0 3px 8px rgba(0, 0, 0, 0.7),
-      0 1px 3px rgba(0, 0, 0, 0.5),
-      /* Glow */
-      0 0 10px rgba(59, 130, 246, 0.25);
-    z-index: 5;
-  }
-  
-  .vault-rivet::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
-    height: 6px;
-    background: radial-gradient(circle,
-      rgba(120, 125, 135, 0.8) 0%,
-      rgba(60, 65, 75, 0.6) 50%,
-      transparent 100%);
-    border-radius: 50%;
-    box-shadow: 
-      inset 0 1px 2px rgba(255, 255, 255, 0.3),
-      0 0 4px rgba(59, 130, 246, 0.3);
   }
-
-  /* Corner rivets - larger and more prominent */
-  .vault-rivet.rivet-1 {
-    top: 40px;
-    left: 40px;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
   }
-
-  .vault-rivet.rivet-2 {
-    top: 40px;
-    right: 40px;
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 125, 90, 0.25);
+    border-radius: 3px;
   }
-
-  .vault-rivet.rivet-3 {
-    bottom: 40px;
-    left: 40px;
-  }
-
-  .vault-rivet.rivet-4 {
-    bottom: 40px;
-    right: 40px;
-  }
-  
-  /* Additional rivets along edges for more industrial look */
-  .vault-rivet.rivet-5 {
-    top: 50%;
-    left: 30px;
-    transform: translateY(-50%);
-  }
-  
-  .vault-rivet.rivet-6 {
-    top: 50%;
-    right: 30px;
-    transform: translateY(-50%);
-  }
-  
-  .vault-rivet.rivet-7 {
-    top: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  
-  .vault-rivet.rivet-8 {
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  .vault-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(ellipse,
-      rgba(59, 130, 246, 0.18) 0%,
-      rgba(59, 130, 246, 0.08) 30%,
-      rgba(16, 185, 129, 0.05) 50%,
-      transparent 70%);
-    border-radius: 50%;
-    animation: glowPulse 5s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
-    filter: blur(40px);
-  }
-
-  @keyframes glowPulse {
-    0%, 100% {
-      opacity: 0.4;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    50% {
-      opacity: 0.7;
-      transform: translate(-50%, -50%) scale(1.15);
-    }
-  }
-
-  /* Smooth animations */
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-slide-in {
-    animation: slideIn 0.3s ease-out;
-  }
-
-  /* Gradient backgrounds */
-  .gradient-success {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  }
-
-  .gradient-danger {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  }
-
-  .gradient-accent {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  }
-
-  /* Glow effects */
-  .glow-success {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
-  }
-
-  .glow-danger {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 125, 90, 0.45);
   }
 
   .glow-accent {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 24px -6px rgba(255, 125, 90, 0.45);
+  }
+  .glow-success {
+    box-shadow: 0 0 24px -6px rgba(47, 212, 140, 0.4);
+  }
+  .glow-danger {
+    box-shadow: 0 0 24px -6px rgba(246, 70, 93, 0.4);
+  }
+
+  .animate-slide-in {
+    animation: fade-up 0.3s ease-out;
   }
 }
-

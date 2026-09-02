@@ -68,13 +68,38 @@ The documentation will be available at `http://localhost:3000`
 └── data/                  # SQLite database
 ```
 
+## Accounts (Clerk)
+
+Accounts are **optional**. The terminal, market data, paper trading, parlays and
+the in-browser wallet all work fully while signed out.
+
+Signing in adds one thing: your paper portfolio, parlays, alerts and terminal
+settings are saved to your account and follow you to other browsers/devices.
+
+**Your wallet's private key is never sent to the server.** It stays in the
+browser that generated it — an account does not back it up.
+
+Sync is last-write-wins: on sign-in, whichever side was updated most recently
+wins. If you traded as a guest and then sign in to a fresh account, your guest
+progress is pushed up rather than discarded.
+
 ## Environment Variables
 
 Create a `.env.local` file:
 
 ```env
 NEXT_PUBLIC_SOLANA_RPC_URL=your_rpc_url_here
+
+# Clerk (required for accounts; the app still runs guest-only without them)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# Optional: Postgres for account sync. Falls back to local SQLite when unset.
+DATABASE_URL=postgres://...
 ```
+
+> Deploying: set the Clerk keys in your host's environment, and switch the Clerk
+> instance from development to production in the Clerk dashboard.
 
 ## Tech Stack
 

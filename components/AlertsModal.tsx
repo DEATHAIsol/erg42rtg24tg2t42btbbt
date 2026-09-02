@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Plus, Trash2, Bell, BellOff } from 'lucide-react'
+import { ModalPortal } from './ModalPortal'
 import { useToast } from './Toast'
 
 interface MarketAlert {
@@ -83,9 +84,11 @@ export function AlertsModal({ isOpen, onClose }: AlertsModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+
+    <ModalPortal>
+      <div className="modal-overlay" onClick={onClose}>
       <div
-        className="terminal-card w-full max-w-3xl max-h-[90vh] overflow-auto bg-terminal-surface"
+        className="modal-panel max-w-3xl max-h-[90vh] my-auto overflow-auto p-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
@@ -111,7 +114,7 @@ export function AlertsModal({ isOpen, onClose }: AlertsModalProps) {
 
         {/* Add Alert Form */}
         {showAddForm && (
-          <div className="terminal-card mb-4 bg-terminal-bg">
+          <div className="terminal-card p-4 mb-4 bg-terminal-bg">
             <h3 className="font-semibold mb-4">Create Alert</h3>
             <div className="space-y-4">
               <div>
@@ -192,7 +195,7 @@ export function AlertsModal({ isOpen, onClose }: AlertsModalProps) {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="terminal-card bg-terminal-bg flex items-center justify-between"
+                className="terminal-card p-4 bg-terminal-bg flex items-center justify-between"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -233,6 +236,7 @@ export function AlertsModal({ isOpen, onClose }: AlertsModalProps) {
         </div>
       </div>
     </div>
+    </ModalPortal>
   )
 }
 

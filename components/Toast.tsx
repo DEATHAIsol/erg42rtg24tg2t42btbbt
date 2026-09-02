@@ -97,21 +97,21 @@ function ToastItem({ toast, onRemove }: { toast: Toast, onRemove: (id: string) =
     info: <Info size={20} className="text-terminal-accent flex-shrink-0" />,
   }
 
-  const bgColors = {
-    success: 'bg-terminal-success/10 border-terminal-success/30',
-    error: 'bg-terminal-danger/10 border-terminal-danger/30',
-    warning: 'bg-terminal-warning/10 border-terminal-warning/30',
-    info: 'bg-terminal-accent/10 border-terminal-accent/30',
+  const accentColors = {
+    success: 'border-l-terminal-success',
+    error: 'border-l-terminal-danger',
+    warning: 'border-l-terminal-warning',
+    info: 'border-l-terminal-accent',
   }
 
   return (
     <div
       className={`
-        ${bgColors[toast.type]}
-        border rounded-lg p-4 shadow-lg backdrop-blur-sm
+        bg-terminal-elevated/95 border border-terminal-border border-l-2 ${accentColors[toast.type]}
+        rounded-xl p-4 shadow-modal backdrop-blur-md
         flex items-start gap-3 min-w-[280px]
-        animate-in slide-in-from-right-5 duration-200
-        ${isExiting ? 'animate-out slide-out-to-right-5 opacity-0' : ''}
+        animate-slide-in-right transition-all duration-200
+        ${isExiting ? 'opacity-0 translate-x-4' : ''}
       `}
     >
       {icons[toast.type]}

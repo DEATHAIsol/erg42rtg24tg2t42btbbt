@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { X, Save, Monitor, Moon, Sun } from 'lucide-react'
+import { ModalPortal } from './ModalPortal'
+import { applyTheme, readTheme } from '@/lib/useTheme'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -32,17 +34,27 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }, [])
 
+  // Theme previews apply live, so dismissing without saving must put it back.
+  const handleDismiss = () => {
+    applyTheme(readTheme())
+    onClose()
+  }
+
   const handleSave = () => {
     localStorage.setItem('terminal-settings', JSON.stringify(settings))
+    // Let the account-sync layer know there is something new to persist.
+    window.dispatchEvent(new CustomEvent('terminal-settings-updated'))
     onClose()
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+
+    <ModalPortal>
+      <div className="modal-overlay" onClick={handleDismiss}>
       <div
-        className="terminal-card w-full max-w-2xl max-h-[90vh] overflow-auto bg-terminal-surface"
+        className="modal-panel max-w-2xl max-h-[90vh] my-auto overflow-auto p-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
@@ -61,10 +73,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <label className="block text-sm font-medium mb-2">Theme</label>
             <div className="flex gap-2">
               <button
-                onClick={() => setSettings({ ...settings, theme: 'dark' })}
+                onClick={() => { setSettings({ ...settings, theme: 'dark' }); applyTheme('dark') }}
                 className={`flex-1 p-3 rounded border transition-all ${
                   settings.theme === 'dark'
-                    ? 'bg-terminal-accent border-terminal-accent text-white'
+                    ? 'bg-terminal-accent border-terminal-accent text-terminal-ink'
                     : 'bg-terminal-surface border-terminal-border'
                 }`}
               >
@@ -72,10 +84,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <span className="text-xs">Dark</span>
               </button>
               <button
-                onClick={() => setSettings({ ...settings, theme: 'light' })}
+                onClick={() => { setSettings({ ...settings, theme: 'light' }); applyTheme('light') }}
                 className={`flex-1 p-3 rounded border transition-all ${
                   settings.theme === 'light'
-                    ? 'bg-terminal-accent border-terminal-accent text-white'
+                    ? 'bg-terminal-accent border-terminal-accent text-terminal-ink'
                     : 'bg-terminal-surface border-terminal-border'
                 }`}
               >
@@ -191,7 +203,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     onClick={() => setSettings({ ...settings, defaultOrderType: 'market' })}
                     className={`flex-1 py-2 rounded text-sm transition-all ${
                       settings.defaultOrderType === 'market'
-                        ? 'bg-terminal-accent text-white'
+                        ? 'bg-terminal-accent text-terminal-ink'
                         : 'bg-terminal-surface border border-terminal-border'
                     }`}
                   >
@@ -201,7 +213,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     onClick={() => setSettings({ ...settings, defaultOrderType: 'limit' })}
                     className={`flex-1 py-2 rounded text-sm transition-all ${
                       settings.defaultOrderType === 'limit'
-                        ? 'bg-terminal-accent text-white'
+                        ? 'bg-terminal-accent text-terminal-ink'
                         : 'bg-terminal-surface border border-terminal-border'
                     }`}
                   >
@@ -255,6 +267,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
       </div>
     </div>
+    </ModalPortal>
   )
 }
 

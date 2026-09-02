@@ -167,10 +167,23 @@ export default function MarketPage() {
     return (
       <div className="flex flex-col h-screen overflow-hidden bg-terminal-bg">
         <TerminalHeader />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <RefreshCw size={32} className="animate-spin mx-auto mb-4 text-terminal-accent" />
-            <div className="text-terminal-text-secondary">Loading market...</div>
+        <div className="flex-1 overflow-hidden">
+          <div className="max-w-7xl mx-auto p-4 lg:p-6">
+            <div className="skeleton h-8 w-40 mb-6" />
+            <div className="flex items-start gap-4 mb-8">
+              <div className="skeleton w-16 h-16 rounded-lg flex-shrink-0" />
+              <div className="flex-1 space-y-3">
+                <div className="skeleton h-6 w-3/4" />
+                <div className="skeleton h-4 w-1/2" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="skeleton h-28" />
+                <div className="skeleton h-80" />
+              </div>
+              <div className="skeleton h-96" />
+            </div>
           </div>
         </div>
       </div>
@@ -185,8 +198,8 @@ export default function MarketPage() {
           <div className="text-center">
             <div className="text-2xl font-bold mb-2">Market not found</div>
             <button
-              onClick={() => router.push('/')}
-              className="mt-4 px-4 py-2 bg-terminal-accent text-white rounded-lg hover:bg-terminal-accent/90 transition-colors"
+              onClick={() => router.push('/markets')}
+              className="mt-4 px-4 py-2 bg-terminal-accent text-terminal-ink rounded-lg hover:bg-terminal-accent/90 transition-colors"
             >
               Back to Markets
             </button>
@@ -208,7 +221,7 @@ export default function MarketPage() {
         <div className="border-b border-terminal-border bg-terminal-surface/50 px-4 lg:px-6 py-3 lg:py-4 flex-shrink-0">
           <div className="max-w-7xl mx-auto">
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/markets')}
               className="flex items-center gap-2 text-terminal-text-secondary hover:text-terminal-text-primary transition-colors mb-4"
             >
               <ArrowLeft size={18} />
@@ -301,12 +314,12 @@ export default function MarketPage() {
               {/* Left Column - Chart and Order Book */}
               <div className="lg:col-span-2 space-y-4 lg:space-y-6">
                 {/* Price Display */}
-                <div className="terminal-card">
+                <div className="terminal-card p-4">
                   <div className="grid grid-cols-2 gap-3 lg:gap-4">
                     <div className="p-3 lg:p-4 bg-terminal-success/10 border border-terminal-success/30 rounded-lg">
                       <div className="text-xs text-terminal-text-secondary mb-1 lg:mb-2 uppercase tracking-wider">Yes Price</div>
-                      <div className="text-2xl lg:text-3xl font-bold text-terminal-success mb-1 lg:mb-2">
-                        {yesPrice !== null ? `${(yesPrice * 100).toFixed(2)}¢` : 'N/A'}
+                      <div className="text-2xl lg:text-3xl font-bold text-terminal-success mb-1 lg:mb-2 num">
+                        {yesPrice !== null ? `${(yesPrice * 100).toFixed(2)}¢` : '—'}
                       </div>
                       {marketPrice?.yes?.buyPrice && (
                         <div className="text-xs text-terminal-text-muted">
@@ -321,8 +334,8 @@ export default function MarketPage() {
                     </div>
                     <div className="p-3 lg:p-4 bg-terminal-danger/10 border border-terminal-danger/30 rounded-lg">
                       <div className="text-xs text-terminal-text-secondary mb-1 lg:mb-2 uppercase tracking-wider">No Price</div>
-                      <div className="text-2xl lg:text-3xl font-bold text-terminal-danger mb-1 lg:mb-2">
-                        {noPrice !== null ? `${(noPrice * 100).toFixed(2)}¢` : 'N/A'}
+                      <div className="text-2xl lg:text-3xl font-bold text-terminal-danger mb-1 lg:mb-2 num">
+                        {noPrice !== null ? `${(noPrice * 100).toFixed(2)}¢` : '—'}
                       </div>
                       {marketPrice?.no?.buyPrice && (
                         <div className="text-xs text-terminal-text-muted">
@@ -339,13 +352,8 @@ export default function MarketPage() {
                 </div>
 
                 {/* Chart */}
-                <div className="terminal-card">
-                  <div className="p-3 lg:p-4 border-b border-terminal-border">
-                    <h2 className="text-base lg:text-lg font-semibold">Price Chart</h2>
-                  </div>
-                  <div className="h-64 lg:h-80">
-                    <MarketChart market={market} priceData={marketPrice} />
-                  </div>
+                <div className="terminal-card overflow-hidden">
+                  <MarketChart market={market} priceData={marketPrice} />
                 </div>
 
                 {/* Order Book */}
@@ -373,9 +381,9 @@ export default function MarketPage() {
                             {/* Current Price */}
                             <div className="flex justify-between py-2 px-2 bg-terminal-accent/10 border-y border-terminal-accent/30 my-1">
                               <span className="text-sm font-bold text-terminal-accent">
-                                {yesPrice !== null ? `${(yesPrice * 100).toFixed(2)}¢` : 'N/A'}
+                                {yesPrice !== null ? `${(yesPrice * 100).toFixed(2)}¢` : '—'}
                               </span>
-                              <span className="text-xs text-terminal-text-secondary">Current</span>
+                              <span className="text-xs text-terminal-text-secondary">Last</span>
                             </div>
                             {/* Bids */}
                             <div className="space-y-0.5 mt-2">
@@ -410,9 +418,9 @@ export default function MarketPage() {
                             {/* Current Price */}
                             <div className="flex justify-between py-2 px-2 bg-terminal-accent/10 border-y border-terminal-accent/30 my-1">
                               <span className="text-sm font-bold text-terminal-accent">
-                                {noPrice !== null ? `${(noPrice * 100).toFixed(2)}¢` : 'N/A'}
+                                {noPrice !== null ? `${(noPrice * 100).toFixed(2)}¢` : '—'}
                               </span>
-                              <span className="text-xs text-terminal-text-secondary">Current</span>
+                              <span className="text-xs text-terminal-text-secondary">Last</span>
                             </div>
                             {/* Bids */}
                             <div className="space-y-0.5 mt-2">

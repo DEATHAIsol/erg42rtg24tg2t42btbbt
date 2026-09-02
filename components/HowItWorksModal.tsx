@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { ModalPortal } from './ModalPortal'
 
 interface HowItWorksModalProps {
   isOpen: boolean
@@ -12,8 +13,10 @@ export function HowItWorksModal({ isOpen, onClose }: HowItWorksModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-terminal-surface border border-terminal-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+
+    <ModalPortal>
+      <div className="modal-overlay">
+      <div className="modal-panel max-w-2xl max-h-[90vh] my-auto overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-terminal-surface border-b border-terminal-border p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-terminal-text-primary">How it works</h2>
@@ -70,7 +73,7 @@ export function HowItWorksModal({ isOpen, onClose }: HowItWorksModalProps) {
                 4
               </div>
               <p className="text-terminal-text-primary pt-1">
-                Explore leveraging your postions on markets to multiply profits
+                Explore leveraging your positions on markets to multiply profits
               </p>
             </div>
 
@@ -79,7 +82,7 @@ export function HowItWorksModal({ isOpen, onClose }: HowItWorksModalProps) {
                 5
               </div>
               <p className="text-terminal-text-primary pt-1">
-                Build a parlay on multiple outcomes occuring to increase payout
+                Build a parlay on multiple outcomes occurring to increase your payout
               </p>
             </div>
           </div>
@@ -89,13 +92,14 @@ export function HowItWorksModal({ isOpen, onClose }: HowItWorksModalProps) {
         <div className="sticky bottom-0 bg-terminal-surface border-t border-terminal-border p-6">
           <button
             onClick={onClose}
-            className="w-full terminal-button-primary px-6 py-3 text-lg font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+            className="w-full terminal-button-primary !py-3 !text-base"
           >
             I&apos;m ready to trade
           </button>
         </div>
       </div>
     </div>
+    </ModalPortal>
   )
 }
 

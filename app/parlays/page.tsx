@@ -2,14 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { TerminalHeader } from '@/components/TerminalHeader'
-import { Sidebar } from '@/components/Sidebar'
 import { useCustodialWallet } from '@/lib/useCustodialWallet'
 import { fetchMarkets, PolymarketMarket } from '@/lib/polymarket'
-import { MarketFilters } from '@/components/Sidebar'
 import { Plus, X, TrendingUp, TrendingDown, Calculator, Trash2, ArrowRight, CheckCircle2, AlertCircle, Search, SlidersHorizontal, Zap, Eye, RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
 import { checkParlayStatus, getParlayStats, getPlacedParlays as getPlacedParlaysFromStorage, savePlacedParlay, updateAllParlayCurrentValues, calculateCombinedOdds, calculatePayout, type PlacedParlay, type ParlayLeg as ParlayLegType } from '@/lib/parlay-management'
-import { fetchWalletBalanceHelius } from '@/lib/helius-api'
-import { getDemoMode } from '@/lib/demo-mode'
 import { getPaperTradingState } from '@/lib/paper-trading'
 import { useRouter } from 'next/navigation'
 import { getBestPrice } from '@/lib/clob-client'
@@ -31,23 +27,13 @@ interface ParlayLeg {
 export default function ParlaysPage() {
   const router = useRouter()
   const toast = useToast()
-  const { publicKey, connected } = useCustodialWallet()
+  const { publicKey, connected, isSignedIn, balance: accountBalance } = useCustodialWallet()
   const address = publicKey?.toString() || null
   const isConnected = connected
   const [markets, setMarkets] = useState<PolymarketMarket[]>([])
   const [parlayLegs, setParlayLegs] = useState<ParlayLeg[]>([])
   const [showMarketSelector, setShowMarketSelector] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [stakeAmount, setStakeAmount] = useState('')
-  const [filters, setFilters] = useState<MarketFilters>({
-    searchQuery: '',
-    selectedTags: [],
-    sortBy: 'volume',
-    minVolume: 0,
-    minLiquidity: 0,
-    minOdds: 1,
-    maxOdds: 99,
-  })
   const [marketSelectorSearch, setMarketSelectorSearch] = useState('')
   const [marketSelectorTags, setMarketSelectorTags] = useState<string[]>([])
   const [marketSelectorSort, setMarketSelectorSort] = useState<'volume' | 'liquidity' | 'newest' | 'oldest'>('volume')
@@ -60,9 +46,6 @@ export default function ParlaysPage() {
   const [confirmedConsent, setConfirmedConsent] = useState(false)
   const [expandedParlays, setExpandedParlays] = useState<Set<string>>(new Set())
   const [solPrice, setSolPrice] = useState<number>(180) // SOL price in USD
-  const [walletBalance, setWalletBalance] = useState<number | null>(null)
-  const [paperBalance, setPaperBalance] = useState<number>(0)
-  const [demoMode, setDemoMode] = useState<boolean>(false)
 
   useEffect(() => {
     loadMarkets()
@@ -98,34 +81,6 @@ export default function ParlaysPage() {
     }
   }, [])
 
-  // Load real wallet balance via Helius (custodial wallet)
-  useEffect(() => {
-    if (!address) {
-      setWalletBalance(null)
-      return
-    }
-
-    let intervalId: NodeJS.Timeout | null = null
-
-    const loadWalletBalance = async () => {
-      try {
-        const bal = await fetchWalletBalanceHelius(address)
-        setWalletBalance(bal)
-      } catch {
-        // On failure, treat as 0 as per requirement
-        setWalletBalance(0)
-      }
-    }
-
-    loadWalletBalance()
-    intervalId = setInterval(loadWalletBalance, 30000)
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [address])
 
   // Fetch SOL price
   useEffect(() => {
@@ -150,61 +105,9 @@ export default function ParlaysPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Load real wallet balance (live mode)
-  useEffect(() => {
-    if (!address) {
-      setWalletBalance(null)
-      return
-    }
 
-    let intervalId: NodeJS.Timeout | null = null
+  // Balance now comes from useCustodialWallet (accountBalance).
 
-    const loadWalletBalance = async () => {
-      try {
-        const bal = await fetchWalletBalanceHelius(address)
-        setWalletBalance(bal)
-      } catch {
-        setWalletBalance(0)
-      }
-    }
-
-    loadWalletBalance()
-    intervalId = setInterval(loadWalletBalance, 30000)
-
-    return () => {
-      if (intervalId) clearInterval(intervalId)
-    }
-  }, [address])
-
-  // Sync paper trading balance (demo mode)
-  useEffect(() => {
-    const updatePaperBalance = () => {
-      const state = getPaperTradingState()
-      setPaperBalance(state.balance)
-    }
-    updatePaperBalance()
-    window.addEventListener('paper-trading-updated', updatePaperBalance)
-    return () => {
-      window.removeEventListener('paper-trading-updated', updatePaperBalance)
-    }
-  }, [])
-
-  // Demo mode flag
-  useEffect(() => {
-    setDemoMode(getDemoMode())
-    const handleDemo = (e: Event) => {
-      const enabled = (e as CustomEvent)?.detail?.enabled
-      if (typeof enabled === 'boolean') {
-        setDemoMode(enabled)
-      } else {
-        setDemoMode(getDemoMode())
-      }
-    }
-    window.addEventListener('demo-mode-updated', handleDemo)
-    return () => {
-      window.removeEventListener('demo-mode-updated', handleDemo)
-    }
-  }, [])
 
   const loadPlacedParlays = async () => {
     try {
@@ -576,12 +479,6 @@ export default function ParlaysPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-terminal-bg">
-      <Sidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        filters={filters}
-        onFiltersChange={setFilters}
-      />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TerminalHeader />
 
@@ -913,7 +810,7 @@ export default function ParlaysPage() {
                       </p>
                       <button
                         onClick={() => setShowMarketSelector(true)}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-terminal-accent hover:bg-blue-600 text-white font-semibold transition-colors"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-terminal-accent hover:bg-terminal-accent-hover text-terminal-ink font-semibold transition-colors"
                       >
                         <Plus size={16} />
                         Add First Market
@@ -1113,7 +1010,7 @@ export default function ParlaysPage() {
                       disabled={!canPlaceParlay}
                       className={`flex-1 py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 ${
                         canPlaceParlay
-                          ? 'bg-terminal-accent hover:bg-blue-600 text-white'
+                          ? 'bg-terminal-accent hover:bg-terminal-accent-hover text-terminal-ink'
                           : 'bg-terminal-surface border border-terminal-border text-terminal-text-muted cursor-not-allowed'
                       }`}
                     >
@@ -1272,7 +1169,7 @@ export default function ParlaysPage() {
                         // Check balance: use demo (paper) or live wallet; require stake + site fee + 1.04 SOL buffer
                         const totalDeduction = stakeVal + SITE_FEE_SOL
                         const required = totalDeduction + 1.04
-                        const effectiveBalance = demoMode ? paperBalance : (walletBalance ?? 0)
+                        const effectiveBalance = accountBalance
                         if (effectiveBalance < required) {
                           toast.showError(`Insufficient balance. Need ${required.toFixed(4)} SOL (includes 1.04 SOL buffer) — stake ${stakeVal.toFixed(4)} + fee ${SITE_FEE_SOL}, have ${effectiveBalance.toFixed(4)} SOL`)
                           return
@@ -1310,7 +1207,7 @@ export default function ParlaysPage() {
                     disabled={!confirmedConsent}
                     className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${
                       confirmedConsent
-                          ? 'bg-terminal-accent hover:bg-blue-600 text-white'
+                          ? 'bg-terminal-accent hover:bg-terminal-accent-hover text-terminal-ink'
                           : 'bg-terminal-surface border border-terminal-border text-terminal-text-muted cursor-not-allowed'
                       }`}
                     >
@@ -1363,7 +1260,7 @@ export default function ParlaysPage() {
                     <SlidersHorizontal size={14} />
                     Filters
                     {marketSelectorTags.length > 0 && (
-                      <span className="bg-terminal-accent text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+                      <span className="bg-terminal-accent text-terminal-ink rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
                         {marketSelectorTags.length}
                       </span>
                     )}
@@ -1400,7 +1297,7 @@ export default function ParlaysPage() {
                             }}
                             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                               isSelected
-                                ? 'bg-terminal-accent text-white border border-terminal-accent'
+                                ? 'bg-terminal-accent text-terminal-ink border border-terminal-accent'
                                 : 'bg-terminal-surface/50 border border-terminal-border/50 text-terminal-text-secondary hover:border-terminal-accent/50'
                             }`}
                           >

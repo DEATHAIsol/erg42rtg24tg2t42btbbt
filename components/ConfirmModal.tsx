@@ -2,6 +2,7 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react'
 import { X, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
+import { ModalPortal } from './ModalPortal'
 
 type ConfirmType = 'warning' | 'danger' | 'info' | 'success'
 
@@ -137,12 +138,13 @@ function ConfirmModal({
   }
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200]"
+    <ModalPortal>
+    <div
+      className="modal-overlay !z-[200]"
       onClick={onCancel}
     >
       <div
-        className="bg-terminal-surface border border-terminal-border rounded-xl shadow-2xl max-w-md w-full mx-4 animate-in zoom-in-95 duration-200"
+        className="modal-panel max-w-md my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -179,6 +181,7 @@ function ConfirmModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   )
 }
 

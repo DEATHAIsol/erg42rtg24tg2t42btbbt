@@ -1,22 +1,23 @@
 'use client'
 
 import { TerminalHeader } from '@/components/TerminalHeader'
+import { SiteFooter } from '@/components/SiteFooter'
 
 export default function TermsOfUsePage() {
   return (
-    <div className="flex flex-col h-screen bg-terminal-bg">
+    <div className="flex flex-col min-h-screen bg-terminal-bg">
       <TerminalHeader />
-      <main className="flex-1 overflow-auto px-6 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-3">Terms of Use</h1>
-          <p className="text-sm text-terminal-text-secondary mb-6">
+      <main className="flex-1 px-6 py-12 lg:py-16">
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">Terms of Use</h1>
+          <p className="text-base text-terminal-text-secondary mb-8">
             These Terms of Use outline the rules and conditions for using the Probio Markets platform.
           </p>
-          <div className="text-sm text-terminal-text-secondary">
+          <div className="terminal-card p-6 lg:p-8 text-sm text-terminal-text-secondary leading-relaxed">
             <p className="whitespace-pre-line">
             {`ProbioMarkets.com Terms of Use
 
-Last Updated: January 14, 2026
+Last Updated: August 12, 2026
 
 Introduction
 
@@ -186,6 +187,7 @@ TO THE EXTENT PERMITTED BY APPLICABLE LAW, NEITHER THE COMPANY NOR ANY OF ITS SE
           </div>
         </div>
       </main>
+      <SiteFooter />
     </div>
   )
 }

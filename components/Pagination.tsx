@@ -57,32 +57,29 @@ export function Pagination({
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-terminal-border bg-terminal-surface">
-      <div className="text-sm text-terminal-text-secondary">
-        Showing <span className="font-medium text-terminal-text-primary">{startItem}</span> to{' '}
-        <span className="font-medium text-terminal-text-primary">{endItem}</span> of{' '}
-        <span className="font-medium text-terminal-text-primary">{totalItems}</span> markets
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-terminal-border bg-terminal-surface/60">
+      <div className="text-xs sm:text-sm text-terminal-text-secondary num">
+        <span className="font-medium text-terminal-text-primary">{startItem.toLocaleString()}</span>
+        –<span className="font-medium text-terminal-text-primary">{endItem.toLocaleString()}</span> of{' '}
+        <span className="font-medium text-terminal-text-primary">{totalItems.toLocaleString()}</span> markets
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className={`p-2 rounded transition-colors ${
-            currentPage === 1
-              ? 'text-terminal-text-muted cursor-not-allowed opacity-50'
-              : 'text-terminal-text-secondary hover:text-terminal-text-primary hover:bg-terminal-border'
-          }`}
+          className="icon-button h-8 w-8 disabled:opacity-40"
+          aria-label="Previous page"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={16} />
         </button>
 
         <div className="flex items-center gap-1">
           {getPageNumbers().map((page, index) => {
             if (page === '...') {
               return (
-                <span key={`ellipsis-${index}`} className="px-2 text-terminal-text-secondary">
-                  ...
+                <span key={`ellipsis-${index}`} className="px-1.5 text-terminal-text-muted text-sm">
+                  …
                 </span>
               )
             }
@@ -92,11 +89,13 @@ export function Pagination({
               <button
                 key={pageNum}
                 onClick={() => onPageChange(pageNum)}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
+                className={`min-w-[32px] h-8 px-2 rounded-lg text-sm transition-colors num ${
                   currentPage === pageNum
-                    ? 'bg-terminal-accent text-white'
-                    : 'text-terminal-text-secondary hover:text-terminal-text-primary hover:bg-terminal-border'
+                    ? 'bg-terminal-accent text-terminal-ink font-semibold'
+                    : 'text-terminal-text-secondary hover:text-terminal-text-primary hover:bg-terminal-elevated'
                 }`}
+                aria-label={`Page ${pageNum}`}
+                aria-current={currentPage === pageNum ? 'page' : undefined}
               >
                 {pageNum}
               </button>
@@ -107,13 +106,10 @@ export function Pagination({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className={`p-2 rounded transition-colors ${
-            currentPage === totalPages
-              ? 'text-terminal-text-muted cursor-not-allowed opacity-50'
-              : 'text-terminal-text-secondary hover:text-terminal-text-primary hover:bg-terminal-border'
-          }`}
+          className="icon-button h-8 w-8 disabled:opacity-40"
+          aria-label="Next page"
         >
-          <ChevronRight size={18} />
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

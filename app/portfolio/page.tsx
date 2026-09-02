@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { TerminalHeader } from '@/components/TerminalHeader'
-import { Sidebar } from '@/components/Sidebar'
 import { useCustodialWallet } from '@/lib/useCustodialWallet'
-import { MarketFilters } from '@/components/Sidebar'
-import { TrendingUp, TrendingDown, Clock, X, RefreshCw, ExternalLink, ArrowUpRight, ArrowDownRight, Filter, SortAsc, SortDesc, Download, BarChart3 } from 'lucide-react'
+import { TrendingUp, TrendingDown, Clock, X, RefreshCw, ExternalLink, ArrowUpRight, ArrowDownRight, Filter, SortAsc, SortDesc, Wallet, Target, BarChart3, Briefcase } from 'lucide-react'
 import { 
   getPaperTradingState, 
   getPositionsWithPnL, 
@@ -38,24 +36,14 @@ export default function PortfolioPage() {
   const router = useRouter()
   const toast = useToast()
   const { confirm } = useConfirm()
-  const { connected } = useCustodialWallet()
-  const isConnected = connected
+  // Portfolio works for guests too — they simply see the demo portfolio.
+  const { connected: accountReady, isSignedIn } = useCustodialWallet()
   const [positions, setPositions] = useState<PositionWithPnL[]>([])
   const [orders, setOrders] = useState<PaperOrder[]>([])
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [portfolioValue, setPortfolioValue] = useState({ totalValue: 0, totalPnL: 0, availableBalance: 0 })
-  const [filters, setFilters] = useState<MarketFilters>({
-    searchQuery: '',
-    selectedTags: [],
-    sortBy: 'volume',
-    minVolume: 0,
-    minLiquidity: 0,
-    minOdds: 1,
-    maxOdds: 99,
-  })
   const [positionFilter, setPositionFilter] = useState<'all' | 'profitable' | 'losing'>('all')
   const [positionSort, setPositionSort] = useState<'pnl' | 'size' | 'date'>('date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
@@ -73,7 +61,7 @@ export default function PortfolioPage() {
   })
 
   useEffect(() => {
-    if (!isConnected) return
+    if (!accountReady) return
     
     loadPortfolio()
     
@@ -91,7 +79,7 @@ export default function PortfolioPage() {
       clearInterval(interval)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected])
+  }, [accountReady])
 
   const loadPortfolio = async (isRefresh = false) => {
     if (isRefresh) {
@@ -273,67 +261,98 @@ export default function PortfolioPage() {
   }
 
 
+  const statCards = [
+    {
+      label: 'Portfolio value',
+      value: `${portfolioValue.totalValue.toFixed(4)} SOL`,
+      icon: Briefcase,
+      sub: undefined as string | undefined,
+      accent: 'text-terminal-text-primary',
+    },
+    {
+      label: 'Available balance',
+      value: `${portfolioValue.availableBalance.toFixed(4)} SOL`,
+      icon: Wallet,
+      sub: undefined as string | undefined,
+      accent: 'text-terminal-text-primary',
+    },
+    {
+      label: 'Unrealized P&L',
+      value: `${portfolioValue.totalPnL > 0 ? '+' : ''}${portfolioValue.totalPnL.toFixed(4)} SOL`,
+      icon: BarChart3,
+      sub: undefined as string | undefined,
+      accent:
+        portfolioValue.totalPnL > 0
+          ? 'text-terminal-success'
+          : portfolioValue.totalPnL < 0
+          ? 'text-terminal-danger'
+          : 'text-terminal-text-primary',
+    },
+    {
+      label: 'Win rate',
+      value: portfolioStats.totalTrades > 0 ? `${portfolioStats.winRate.toFixed(0)}%` : '—',
+      sub: portfolioStats.totalTrades > 0 ? `${portfolioStats.winningTrades}W / ${portfolioStats.losingTrades}L` : 'No closed trades yet',
+      icon: Target,
+      accent: 'text-terminal-text-primary',
+    },
+  ]
+
   return (
     <div className="flex h-screen overflow-hidden bg-terminal-bg">
-      <Sidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        filters={filters}
-        onFiltersChange={setFilters}
-      />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TerminalHeader />
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 sm:p-6">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between gap-4 mb-6">
               <div>
-                <h1 className="text-3xl font-bold mb-1">Portfolio</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-1 tracking-tight">Portfolio</h1>
                 <p className="text-sm text-terminal-text-secondary">Track your positions and performance</p>
               </div>
               <button
                 onClick={() => loadPortfolio(true)}
                 disabled={loading || refreshing}
-                className="px-4 py-2 bg-terminal-surface border border-terminal-border rounded-lg hover:border-terminal-accent hover:bg-terminal-bg transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="terminal-button"
                 title="Refresh market data and recalculate P&L"
               >
-                <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
-                {refreshing ? 'Refreshing...' : 'Refresh'}
+                <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
+                <span className="hidden sm:inline">{refreshing ? 'Refreshing…' : 'Refresh'}</span>
               </button>
             </div>
 
+            {/* Stats overview */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+              {statCards.map((stat) => (
+                <div key={stat.label} className="terminal-card p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <stat.icon size={14} className="text-terminal-accent" />
+                    <span className="text-xs text-terminal-text-secondary">{stat.label}</span>
+                  </div>
+                  <div className={`text-lg font-bold num ${stat.accent}`}>{stat.value}</div>
+                  {stat.sub && <div className="text-xs text-terminal-text-muted mt-0.5 num">{stat.sub}</div>}
+                </div>
+              ))}
+            </div>
+
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 border-b border-terminal-border">
-              <button
-                onClick={() => setActiveTab('positions')}
-                className={`px-4 py-2 font-medium transition-colors ${
-                  activeTab === 'positions'
-                    ? 'text-terminal-accent border-b-2 border-terminal-accent'
-                    : 'text-terminal-text-secondary hover:text-terminal-text-primary'
-                }`}
-              >
-                Positions ({positions.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('orders')}
-                className={`px-4 py-2 font-medium transition-colors ${
-                  activeTab === 'orders'
-                    ? 'text-terminal-accent border-b-2 border-terminal-accent'
-                    : 'text-terminal-text-secondary hover:text-terminal-text-primary'
-                }`}
-              >
-                Open Orders ({orders.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('history')}
-                className={`px-4 py-2 font-medium transition-colors ${
-                  activeTab === 'history'
-                    ? 'text-terminal-accent border-b-2 border-terminal-accent'
-                    : 'text-terminal-text-secondary hover:text-terminal-text-primary'
-                }`}
-              >
-                Trade History
-              </button>
+            <div className="flex gap-1 mb-6 p-1 bg-terminal-surface border border-terminal-border rounded-xl w-fit max-w-full overflow-x-auto">
+              {([
+                { id: 'positions', label: `Positions${positions.length ? ` (${positions.length})` : ''}` },
+                { id: 'orders', label: `Open Orders${orders.length ? ` (${orders.length})` : ''}` },
+                { id: 'history', label: 'Trade History' },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-terminal-elevated text-terminal-text-primary border border-terminal-border-strong shadow-sm'
+                      : 'text-terminal-text-secondary hover:text-terminal-text-primary border border-transparent'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             {/* Positions Tab */}
@@ -345,9 +364,15 @@ export default function PortfolioPage() {
                     <div>Loading positions...</div>
                   </div>
                 ) : positions.length === 0 ? (
-                  <div className="text-center py-12 text-terminal-text-secondary">
-                    <div className="text-lg font-medium mb-2">No open positions</div>
-                    <div className="text-sm">Start trading to see your positions here</div>
+                  <div className="text-center py-16 px-6">
+                    <div className="w-14 h-14 rounded-2xl bg-terminal-elevated border border-terminal-border flex items-center justify-center mx-auto mb-4">
+                      <Briefcase size={24} className="text-terminal-text-muted" />
+                    </div>
+                    <div className="text-base font-semibold mb-1">No open positions</div>
+                    <div className="text-sm text-terminal-text-secondary mb-5">Take a position on a market and it will appear here.</div>
+                    <button onClick={() => router.push('/markets')} className="terminal-button-primary">
+                      Browse markets
+                    </button>
                   </div>
                 ) : (
                   <>
@@ -483,9 +508,12 @@ export default function PortfolioPage() {
                     <div>Loading orders...</div>
                   </div>
                 ) : orders.length === 0 ? (
-                  <div className="text-center py-12 text-terminal-text-secondary">
-                    <div className="text-lg font-medium mb-2">No open orders</div>
-                    <div className="text-sm">Your limit orders will appear here</div>
+                  <div className="text-center py-16 px-6">
+                    <div className="w-14 h-14 rounded-2xl bg-terminal-elevated border border-terminal-border flex items-center justify-center mx-auto mb-4">
+                      <Clock size={24} className="text-terminal-text-muted" />
+                    </div>
+                    <div className="text-base font-semibold mb-1">No open orders</div>
+                    <div className="text-sm text-terminal-text-secondary">Limit orders you place will wait here until they fill.</div>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -573,9 +601,12 @@ export default function PortfolioPage() {
                   const tradingState = getPaperTradingState()
                   const history = tradingState.tradeHistory || []
                   return history.length === 0 ? (
-                    <div className="text-center py-12 text-terminal-text-secondary">
-                      <div className="text-lg font-medium mb-2">No trade history</div>
-                      <div className="text-sm">Your closed positions will appear here</div>
+                    <div className="text-center py-16 px-6">
+                      <div className="w-14 h-14 rounded-2xl bg-terminal-elevated border border-terminal-border flex items-center justify-center mx-auto mb-4">
+                        <BarChart3 size={24} className="text-terminal-text-muted" />
+                      </div>
+                      <div className="text-base font-semibold mb-1">No trade history</div>
+                      <div className="text-sm text-terminal-text-secondary">Closed positions and their realized P&L will appear here.</div>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">

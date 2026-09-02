@@ -111,13 +111,13 @@ export function MarketList({ markets, onMarketSelect, selectedMarket }: MarketLi
   }
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs text-terminal-text-secondary border-b border-terminal-border">
-        <div className="col-span-5">Market</div>
+    <div className="terminal-card overflow-hidden">
+      <div className="grid grid-cols-12 gap-4 px-4 py-2.5 section-label border-b border-terminal-border bg-terminal-elevated/50">
+        <div className="col-span-7 md:col-span-5">Market</div>
         <div className="col-span-2 text-right">Price</div>
-        <div className="col-span-2 text-right">24h Change</div>
-        <div className="col-span-2 text-right">Volume</div>
-        <div className="col-span-1 text-right">Liquidity</div>
+        <div className="hidden md:block col-span-2 text-right">24h Change</div>
+        <div className="col-span-3 md:col-span-2 text-right">Volume</div>
+        <div className="hidden md:block col-span-1 text-right">Liq.</div>
       </div>
 
       {markets.map((market) => {
@@ -129,47 +129,45 @@ export function MarketList({ markets, onMarketSelect, selectedMarket }: MarketLi
           <div
             key={market.id}
             onClick={() => onMarketSelect(market)}
-            className={`grid grid-cols-12 gap-4 px-4 py-3 rounded cursor-pointer transition-all ${
+            className={`grid grid-cols-12 gap-4 px-4 py-3 cursor-pointer items-center transition-colors duration-150 border-b border-terminal-border/60 last:border-b-0 ${
               isSelected
-                ? 'bg-terminal-accent/10 border border-terminal-accent'
-                : 'hover:bg-terminal-surface border border-transparent'
+                ? 'bg-terminal-accent/10'
+                : 'hover:bg-terminal-elevated/60'
             }`}
           >
-            <div className="col-span-5">
-              <div className="flex items-start gap-3">
+            <div className="col-span-7 md:col-span-5">
+              <div className="flex items-center gap-3">
                 {/* Market Image Icon */}
                 <div className="flex-shrink-0">
                   {market.imageUrl ? (
-                    <div className="relative w-10 h-10 bg-terminal-bg rounded overflow-hidden border border-terminal-border">
+                    <div className="relative w-9 h-9 bg-terminal-bg rounded-lg overflow-hidden border border-terminal-border">
                       <Image
                         src={market.imageUrl}
-                        alt={market.question}
+                        alt=""
                         fill
                         className="object-cover"
-                        sizes="40px"
+                        sizes="36px"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none'
                         }}
                       />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 bg-terminal-bg/50 border border-terminal-border rounded flex items-center justify-center">
-                      <ImageIcon size={16} className="text-terminal-text-muted opacity-50" />
+                    <div className="w-9 h-9 bg-terminal-elevated border border-terminal-border rounded-lg flex items-center justify-center">
+                      <ImageIcon size={14} className="text-terminal-text-muted opacity-50" />
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm mb-1">{market.question}</div>
-                  <div className="flex items-center gap-2 text-xs text-terminal-text-secondary">
+                  <div className="font-medium text-sm leading-snug line-clamp-1 mb-0.5">{market.question}</div>
+                  <div className="flex items-center gap-2 text-xs text-terminal-text-muted">
                     {market.tags && market.tags.length > 0 && (
-                      <span className="px-1.5 py-0.5 bg-terminal-bg rounded text-xs">
-                        {market.tags[0]}
-                      </span>
+                      <span className="capitalize">{market.tags[0]}</span>
                     )}
                     {market.endDate && (
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} />
-                        {new Date(market.endDate).toLocaleDateString()}
+                      <span className="hidden sm:flex items-center gap-1 num">
+                        <Clock size={11} />
+                        {new Date(market.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     )}
                   </div>
@@ -178,32 +176,32 @@ export function MarketList({ markets, onMarketSelect, selectedMarket }: MarketLi
             </div>
 
             <div className="col-span-2 text-right">
-              <div className="font-bold">
-                {price !== null ? `${(price * 100).toFixed(1)}¢` : 'N/A'}
+              <div className="font-bold num text-sm">
+                {price !== null ? `${(price * 100).toFixed(1)}¢` : '—'}
               </div>
             </div>
 
-            <div className="col-span-2 text-right">
-              {price !== null ? (
-                <div className={`flex items-center justify-end gap-1 ${
+            <div className="hidden md:block col-span-2 text-right">
+              {price !== null && change !== 0 ? (
+                <div className={`flex items-center justify-end gap-1 text-sm num ${
                   change > 0 ? 'text-terminal-success' : 'text-terminal-danger'
                 }`}>
-                  {change > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  {change > 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
                   <span>{change > 0 ? '+' : ''}{change.toFixed(2)}%</span>
                 </div>
               ) : (
-                <div className="text-terminal-text-muted text-xs">-</div>
+                <div className="text-terminal-text-muted text-xs">—</div>
               )}
             </div>
 
-            <div className="col-span-2 text-right">
-              <div className="text-terminal-text-secondary">
+            <div className="col-span-3 md:col-span-2 text-right">
+              <div className="text-sm text-terminal-text-secondary num">
                 {formatVolumeCompact(market.volume)}
               </div>
             </div>
 
-            <div className="col-span-1 text-right">
-              <div className="text-xs text-terminal-text-secondary">
+            <div className="hidden md:block col-span-1 text-right">
+              <div className="text-xs text-terminal-text-secondary num">
                 ${((market.liquidity || 0) / 1000).toFixed(0)}k
               </div>
             </div>
