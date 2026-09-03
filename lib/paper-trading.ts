@@ -307,6 +307,27 @@ export function resetPaperTrading() {
   window.dispatchEvent(new CustomEvent('paper-trading-updated'))
 }
 
+/**
+ * Apply a signed delta to the balance. Used by flows that sit outside the
+ * position engine (parlays), which previously checked the balance but never
+ * actually moved it.
+ */
+export function adjustPaperBalance(delta: number): { success: boolean; balance: number; error?: string } {
+  if (typeof window === 'undefined') return { success: false, balance: 0, error: 'unavailable' }
+
+  const state = getPaperTradingState()
+  const next = (state.balance || 0) + delta
+
+  if (next < 0) {
+    return { success: false, balance: state.balance, error: 'Insufficient balance' }
+  }
+
+  state.balance = next
+  saveState(state)
+  window.dispatchEvent(new CustomEvent('paper-trading-updated'))
+  return { success: true, balance: state.balance }
+}
+
 // Add SOL to paper trading balance (for testing)
 export function addFunds(amount: number): number {
   if (typeof window === 'undefined') return 0

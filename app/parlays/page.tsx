@@ -6,7 +6,7 @@ import { useCustodialWallet } from '@/lib/useCustodialWallet'
 import { fetchMarkets, PolymarketMarket } from '@/lib/polymarket'
 import { Plus, X, TrendingUp, TrendingDown, Calculator, Trash2, ArrowRight, CheckCircle2, AlertCircle, Search, SlidersHorizontal, Zap, Eye, RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
 import { checkParlayStatus, getParlayStats, getPlacedParlays as getPlacedParlaysFromStorage, savePlacedParlay, updateAllParlayCurrentValues, calculateCombinedOdds, calculatePayout, type PlacedParlay, type ParlayLeg as ParlayLegType } from '@/lib/parlay-management'
-import { getPaperTradingState } from '@/lib/paper-trading'
+import { getPaperTradingState, adjustPaperBalance } from '@/lib/paper-trading'
 import { useRouter } from 'next/navigation'
 import { getBestPrice } from '@/lib/clob-client'
 import { useToast } from '@/components/Toast'
@@ -160,6 +160,21 @@ export default function ParlaysPage() {
     }
   }
 
+  /**
+   * Pays out a parlay that has just settled as a win. The payoutCredited flag
+   * makes this safe to call from every settlement path, since statuses are
+   * re-checked both individually and in bulk.
+   */
+  const creditIfWon = (parlay: PlacedParlay): PlacedParlay => {
+    if (parlay.status !== 'won' || parlay.payoutCredited) return parlay
+    const payout = parlay.actualPayout ?? parlay.potentialPayout ?? 0
+    if (payout > 0) {
+      adjustPaperBalance(payout)
+      toast.showSuccess(`Parlay won. ${payout.toFixed(4)} SOL credited to your balance.`)
+    }
+    return { ...parlay, payoutCredited: true }
+  }
+
   const checkAllParlayStatuses = async () => {
     if (checkingParlays || placedParlays.length === 0) return
     
@@ -168,7 +183,7 @@ export default function ParlaysPage() {
       const updatedParlays = await Promise.all(
         placedParlays.map(async (parlay) => {
           if (parlay.status === 'active') {
-            return await checkParlayStatus(parlay)
+            return creditIfWon(await checkParlayStatus(parlay))
           }
           return parlay
         })
@@ -192,7 +207,7 @@ export default function ParlaysPage() {
     
     setCheckingParlays(true)
     try {
-      const updated = await checkParlayStatus(parlay)
+      const updated = creditIfWon(await checkParlayStatus(parlay))
       const updatedParlays = placedParlays.map(p => p.id === parlayId ? updated : p)
       setPlacedParlays(updatedParlays)
       
@@ -205,7 +220,6 @@ export default function ParlaysPage() {
       if (updated.status !== parlay.status) {
         if (updated.status === 'won') {
           playSuccessSound()
-          toast.showSuccess(`🎉 Parlay won! Payout: ${updated.actualPayout?.toFixed(4)} SOL`)
         } else if (updated.status === 'lost') {
           toast.showError('❌ Parlay lost. One or more legs did not resolve correctly.')
         }
@@ -487,11 +501,34 @@ export default function ParlaysPage() {
           <div className="flex-1 overflow-auto">
             <div className="min-h-full">
               {/* Header */}
-              <div className="max-w-6xl mx-auto px-6 py-8">
-                <h1 className="text-3xl font-bold mb-2">Parlay Builder</h1>
-                <p className="text-sm text-terminal-text-secondary">
-                  Combine markets for amplified returns
+              <div className="max-w-6xl mx-auto px-6 pt-8 pb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="h-px w-8 bg-terminal-accent" />
+                  <span className="section-label !text-terminal-accent">Multi-market slips</span>
+                </div>
+                <h1 className="font-display text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+                  Parlay builder
+                </h1>
+                <p className="text-terminal-text-secondary max-w-lg">
+                  Chain outcomes across unrelated markets into one slip. Every leg has to
+                  land, so the odds multiply.
                 </p>
+
+                {/* Live slip summary */}
+                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-px mt-7 bg-terminal-border border border-terminal-border rounded-card overflow-hidden">
+                  {[
+                    { label: 'Legs', value: String(parlayLegs.length), hint: parlayLegs.length < 2 ? 'min 2' : 'ready' },
+                    { label: 'Combined odds', value: combinedOdds > 0 ? `${(combinedOdds * 100).toFixed(1)}¢` : '—', hint: 'implied' },
+                    { label: 'To pay', value: stake > 0 ? `${totalCost.toFixed(3)}` : '—', hint: 'SOL incl. fee' },
+                    { label: 'Balance', value: accountBalance.toFixed(2), hint: 'SOL' },
+                  ].map((s) => (
+                    <div key={s.label} className="bg-terminal-bg px-4 py-3">
+                      <dd className="font-display text-xl font-bold tracking-tight num">{s.value}</dd>
+                      <dt className="section-label mt-0.5">{s.label}</dt>
+                      <div className="text-[10px] text-terminal-text-muted mt-0.5">{s.hint}</div>
+                    </div>
+                  ))}
+                </dl>
               </div>
 
               <div className="max-w-6xl mx-auto px-6 pb-12">
@@ -793,20 +830,24 @@ export default function ParlaysPage() {
                 )}
 
                 {/* Build Parlay Section */}
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold mb-4">Build Parlay</h2>
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <h2 className="text-xl font-bold">Your slip</h2>
+                  {parlayLegs.length > 0 && (
+                    <span className="badge num">{parlayLegs.length} leg{parlayLegs.length === 1 ? '' : 's'}</span>
+                  )}
                 </div>
 
                 {/* Parlay Legs */}
                 <div className="space-y-3 mb-6">
                   {parlayLegs.length === 0 ? (
-                    <div className="border-2 border-dashed border-terminal-border rounded-xl p-12 text-center bg-terminal-surface/30">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-terminal-accent/10 mb-4">
-                        <Plus size={24} className="text-terminal-accent" />
+                    <div className="border border-dashed border-terminal-border rounded-card p-12 text-center bg-terminal-surface/40">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-terminal-accent/10 border border-terminal-accent/25 mb-4">
+                        <Plus size={20} className="text-terminal-accent" />
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">Start Your Parlay</h3>
-                      <p className="text-sm text-terminal-text-secondary mb-6">
-                        Combine multiple markets to multiply your potential returns
+                      <h3 className="font-semibold mb-1.5">Your slip is empty</h3>
+                      <p className="text-sm text-terminal-text-secondary mb-6 max-w-xs mx-auto">
+                        Add at least two markets. Each leg multiplies the odds, and every
+                        one of them has to land.
                       </p>
                       <button
                         onClick={() => setShowMarketSelector(true)}
@@ -1062,16 +1103,7 @@ export default function ParlaysPage() {
                     </div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-terminal-text-secondary">Site Fee</span>
-                      <span className="text-lg font-bold text-terminal-text-primary">0.02 SOL</span>
-                    </div>
-                    <div className="border-t border-terminal-border pt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs text-terminal-text-secondary">Liquidity Provider Fee</span>
-                        <span className="text-xs text-terminal-text-secondary">2.5% daily</span>
-                      </div>
-                      <p className="text-xs text-terminal-text-muted">
-                        A 2.5% daily fee will be charged to liquidity providers (fee implementation not active)
-                      </p>
+                      <span className="text-lg font-bold text-terminal-text-primary num">{SITE_FEE_SOL} SOL</span>
                     </div>
                   </div>
 
@@ -1166,12 +1198,19 @@ export default function ParlaysPage() {
                         const stakeVal = parseFloat(stakeAmount)
                         const updatedPotentialPayout = calculatePayout(stakeVal, updatedCombinedOdds)
 
-                        // Check balance: use demo (paper) or live wallet; require stake + site fee + 1.04 SOL buffer
+                        // Stake plus the flat site fee leaves the balance now.
                         const totalDeduction = stakeVal + SITE_FEE_SOL
-                        const required = totalDeduction + 1.04
                         const effectiveBalance = accountBalance
-                        if (effectiveBalance < required) {
-                          toast.showError(`Insufficient balance. Need ${required.toFixed(4)} SOL (includes 1.04 SOL buffer): stake ${stakeVal.toFixed(4)} + fee ${SITE_FEE_SOL}, have ${effectiveBalance.toFixed(4)} SOL`)
+                        if (effectiveBalance < totalDeduction) {
+                          toast.showError(`Insufficient balance. Need ${totalDeduction.toFixed(4)} SOL (stake ${stakeVal.toFixed(4)} plus ${SITE_FEE_SOL} fee), have ${effectiveBalance.toFixed(4)} SOL`)
+                          return
+                        }
+
+                        // Actually debit it. This previously computed the amount
+                        // and never moved the balance, so parlays were free.
+                        const debit = adjustPaperBalance(-totalDeduction)
+                        if (!debit.success) {
+                          toast.showError(debit.error || 'Could not debit your balance')
                           return
                         }
                           
@@ -1187,8 +1226,14 @@ export default function ParlaysPage() {
                             status: 'active',
                           }
                           
-                          // Save parlay using management utility
-                          savePlacedParlay(newParlay)
+                          // If saving fails after the debit, hand the money back
+                          // rather than leaving the user short with no parlay.
+                          try {
+                            savePlacedParlay(newParlay)
+                          } catch (saveError) {
+                            adjustPaperBalance(totalDeduction)
+                            throw saveError
+                          }
                           
                         // Reload parlays to ensure UI updates
                         await loadPlacedParlays()

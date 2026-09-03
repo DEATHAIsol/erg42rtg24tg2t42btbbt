@@ -18,6 +18,8 @@ export interface PlacedParlay {
   potentialPayout: number // In SOL
   placedAt: string // ISO date string
   status: 'active' | 'won' | 'lost' | 'partial'
+  /** Guards against crediting the same winning parlay more than once. */
+  payoutCredited?: boolean
   currentValue?: number // Current value based on current prices
   currentCombinedOdds?: number // Current combined odds based on live prices
   currentPnL?: number // Current profit/loss
