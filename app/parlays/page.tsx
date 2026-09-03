@@ -7,6 +7,7 @@ import { fetchMarkets, PolymarketMarket } from '@/lib/polymarket'
 import { Plus, X, TrendingUp, TrendingDown, Calculator, Trash2, ArrowRight, CheckCircle2, AlertCircle, Search, SlidersHorizontal, Zap, Eye, RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
 import { checkParlayStatus, getParlayStats, getPlacedParlays as getPlacedParlaysFromStorage, savePlacedParlay, updateAllParlayCurrentValues, calculateCombinedOdds, calculatePayout, type PlacedParlay, type ParlayLeg as ParlayLegType } from '@/lib/parlay-management'
 import { getPaperTradingState, adjustPaperBalance } from '@/lib/paper-trading'
+import { formatParlayOdds, formatImpliedChance } from '@/lib/parlay-management'
 import { useRouter } from 'next/navigation'
 import { getBestPrice } from '@/lib/clob-client'
 import { useToast } from '@/components/Toast'
@@ -518,7 +519,7 @@ export default function ParlaysPage() {
                 <dl className="grid grid-cols-2 sm:grid-cols-4 gap-px mt-7 bg-terminal-border border border-terminal-border rounded-card overflow-hidden">
                   {[
                     { label: 'Legs', value: String(parlayLegs.length), hint: parlayLegs.length < 2 ? 'min 2' : 'ready' },
-                    { label: 'Combined odds', value: combinedOdds > 0 ? `${(combinedOdds * 100).toFixed(1)}¢` : '—', hint: 'implied' },
+                    { label: 'Odds', value: formatParlayOdds(combinedOdds), hint: combinedOdds > 0 ? `${formatImpliedChance(combinedOdds)} chance` : 'add legs' },
                     { label: 'To pay', value: stake > 0 ? `${totalCost.toFixed(3)}` : '—', hint: 'SOL incl. fee' },
                     { label: 'Balance', value: accountBalance.toFixed(2), hint: 'SOL' },
                   ].map((s) => (
@@ -623,13 +624,19 @@ export default function ParlaysPage() {
                                     <div className="font-semibold">{parlay.stakeAmount.toFixed(4)} SOL</div>
                                   </div>
                                   <div className="flex-shrink-0">
-                                    <div className="text-xs text-terminal-text-secondary">Entry Odds</div>
-                                    <div className="font-semibold">{(parlay.combinedOdds * 100).toFixed(4)}¢</div>
+                                    <div className="text-xs text-terminal-text-secondary">Odds</div>
+                                    <div className="font-semibold num">{formatParlayOdds(parlay.combinedOdds)}</div>
+                                  </div>
+                                  <div className="flex-shrink-0">
+                                    <div className="text-xs text-terminal-text-secondary">Pays if it lands</div>
+                                    <div className="font-semibold text-terminal-success num">
+                                      {(parlay.potentialPayout ?? 0).toFixed(2)} SOL
+                                    </div>
                                   </div>
                                   {parlay.status === 'active' && parlay.currentValue !== undefined && (
                                     <>
                                       <div className="flex-shrink-0">
-                                        <div className="text-xs text-terminal-text-secondary">Current Value</div>
+                                        <div className="text-xs text-terminal-text-secondary">Mark value</div>
                                         <div className={`font-semibold ${
                                           parlay.currentValue > parlay.stakeAmount ? 'text-terminal-success' : 
                                           parlay.currentValue < parlay.stakeAmount ? 'text-terminal-danger' : 
@@ -639,7 +646,7 @@ export default function ParlaysPage() {
                                         </div>
                                       </div>
                                       <div className="flex-shrink-0">
-                                        <div className="text-xs text-terminal-text-secondary">P&L</div>
+                                        <div className="text-xs text-terminal-text-secondary">Unrealised</div>
                                         <div className={`font-semibold flex items-center gap-1 ${
                                           (parlay.currentPnL ?? 0) > 0 ? 'text-terminal-success' : 
                                           (parlay.currentPnL ?? 0) < 0 ? 'text-terminal-danger' : 
@@ -695,13 +702,18 @@ export default function ParlaysPage() {
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                                     {parlay.status === 'active' && parlay.currentValue !== undefined && parlay.currentCombinedOdds !== undefined && parlay.currentCombinedOdds > 0 && (
                                       <div>
-                                        <div className="text-xs text-terminal-text-secondary mb-1">Current Combined Odds</div>
-                                        <div className="font-semibold">{(parlay.currentCombinedOdds * 100).toFixed(4)}¢</div>
+                                        <div className="text-xs text-terminal-text-secondary mb-1">Current odds</div>
+                                        <div className="font-semibold num">
+                                          {formatParlayOdds(parlay.currentCombinedOdds)}
+                                          <span className="ml-2 text-xs font-normal text-terminal-text-muted">
+                                            {formatImpliedChance(parlay.currentCombinedOdds)} chance
+                                          </span>
+                                        </div>
                                       </div>
                                     )}
                                     {parlay.currentPnL !== undefined && (
                                       <div>
-                                        <div className="text-xs text-terminal-text-secondary mb-1">P&L Percentage</div>
+                                        <div className="text-xs text-terminal-text-secondary mb-1">Unrealised %</div>
                                         <div className={`font-semibold ${
                                           parlay.currentPnL > 0 ? 'text-terminal-success' : 
                                           parlay.currentPnL < 0 ? 'text-terminal-danger' : 
@@ -946,8 +958,8 @@ export default function ParlaysPage() {
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="bg-terminal-bg border border-terminal-border rounded-lg p-4">
                         <div className="text-xs text-terminal-text-secondary mb-1 uppercase tracking-wide">Combined Odds</div>
-                        <div className="text-2xl font-bold text-terminal-accent">
-                          {(combinedOdds * 100).toFixed(2)}¢
+                        <div className="text-2xl font-bold text-terminal-accent num">
+                          {formatParlayOdds(combinedOdds)}
                         </div>
                       </div>
                       <div className="bg-terminal-bg border border-terminal-border rounded-lg p-4">

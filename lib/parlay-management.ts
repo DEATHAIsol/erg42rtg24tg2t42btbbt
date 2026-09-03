@@ -49,6 +49,28 @@ export function calculateCombinedOdds(legs: ParlayLeg[]): number {
 }
 
 // Calculate potential payout: stake / combinedOdds
+/**
+ * Combined odds for a multi-leg parlay are a tiny probability (three legs can
+ * easily land near 0.000003), and rendering that as cents gives "0.0003¢",
+ * which tells the user nothing. Express it the way a book does: as the payout
+ * multiple on the stake.
+ */
+export function formatParlayOdds(combinedOdds: number): string {
+  if (!(combinedOdds > 0) || !isFinite(combinedOdds)) return '—'
+  const multiple = 1 / combinedOdds
+  if (multiple >= 1000) return `${Math.round(multiple).toLocaleString()}x`
+  if (multiple >= 100) return `${multiple.toFixed(0)}x`
+  return `${multiple.toFixed(2)}x`
+}
+
+/** The same number as an implied percentage chance, for secondary display. */
+export function formatImpliedChance(combinedOdds: number): string {
+  if (!(combinedOdds > 0) || !isFinite(combinedOdds)) return '—'
+  const pct = combinedOdds * 100
+  if (pct < 0.01) return '<0.01%'
+  return `${pct.toFixed(2)}%`
+}
+
 export function calculatePayout(stake: number, combinedOdds: number): number {
   if (combinedOdds <= 0 || combinedOdds >= 1) return 0
   return stake / combinedOdds
