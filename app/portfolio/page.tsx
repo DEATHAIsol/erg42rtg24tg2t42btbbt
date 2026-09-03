@@ -338,13 +338,13 @@ export default function PortfolioPage() {
             <div className="flex gap-1 mb-6 p-1 bg-terminal-surface border border-terminal-border rounded-xl w-fit max-w-full overflow-x-auto">
               {([
                 { id: 'positions', label: `Positions${positions.length ? ` (${positions.length})` : ''}` },
-                { id: 'orders', label: `Open Orders${orders.length ? ` (${orders.length})` : ''}` },
-                { id: 'history', label: 'Trade History' },
+                { id: 'orders', label: `Orders${orders.length ? ` (${orders.length})` : ''}` },
+                { id: 'history', label: 'History' },
               ] as const).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  className={`px-3 sm:px-4 py-2 rounded-lg text-[13px] sm:text-sm font-medium whitespace-nowrap transition-colors ${
                     activeTab === tab.id
                       ? 'bg-terminal-elevated text-terminal-text-primary border border-terminal-border-strong shadow-sm'
                       : 'text-terminal-text-secondary hover:text-terminal-text-primary border border-transparent'

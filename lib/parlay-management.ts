@@ -20,6 +20,9 @@ export interface PlacedParlay {
   status: 'active' | 'won' | 'lost' | 'partial'
   /** Guards against crediting the same winning parlay more than once. */
   payoutCredited?: boolean
+  /** Legs whose price has pinned to a near-certain outcome. */
+  legsWon?: number
+  legsLost?: number
   currentValue?: number // Current value based on current prices
   currentCombinedOdds?: number // Current combined odds based on live prices
   currentPnL?: number // Current profit/loss
@@ -209,11 +212,26 @@ export async function checkParlayStatus(parlay: PlacedParlay): Promise<PlacedPar
 
     if (newStatus !== parlay.status) {
       const isSettled = newStatus === 'won' || newStatus === 'lost' || newStatus === 'partial'
+      const actualPayout = newStatus === 'won' ? parlay.potentialPayout : undefined
+
+      // Settle the P&L too. Previously only the status changed, and because
+      // updateAllParlayCurrentValues skips non-active parlays, a settled slip
+      // kept whatever mark-to-market figure it happened to hold: a lost parlay
+      // could sit there reading -19.53 when the real loss is the whole stake.
+      const settledValue =
+        newStatus === 'won' ? (actualPayout ?? 0) : newStatus === 'lost' ? 0 : parlay.currentValue
+
       const updated: PlacedParlay = {
         ...parlay,
         status: newStatus,
         settledAt: isSettled ? new Date().toISOString() : undefined,
-        actualPayout: newStatus === 'won' ? parlay.potentialPayout : undefined,
+        actualPayout,
+        currentValue: isSettled ? settledValue : parlay.currentValue,
+        currentCombinedOdds:
+          newStatus === 'won' ? 1 : newStatus === 'lost' ? 0 : parlay.currentCombinedOdds,
+        currentPnL: isSettled
+          ? (settledValue ?? 0) - parlay.stakeAmount
+          : parlay.currentPnL,
       }
       updatePlacedParlay(updated)
       return updated
@@ -239,6 +257,9 @@ export async function updateAllParlayCurrentValues(parlays: PlacedParlay[]): Pro
     try {
       let currentCombinedOdds = 1
 
+      let legsResolvedWon = 0
+      let legsLost = 0
+
       for (const leg of parlay.legs) {
         // Fetch current market prices
         const response = await fetch(`/api/markets/${leg.market.id}`)
@@ -258,6 +279,10 @@ export async function updateAllParlayCurrentValues(parlays: PlacedParlay[]): Pro
         }
 
         currentCombinedOdds *= currentPrice
+
+        // A leg is effectively decided once its price pins to an extreme.
+        if (currentPrice >= 0.99) legsResolvedWon++
+        else if (currentPrice <= 0.01) legsLost++
       }
 
       // Calculate current value and PnL
@@ -273,6 +298,8 @@ export async function updateAllParlayCurrentValues(parlays: PlacedParlay[]): Pro
         currentValue,
         currentCombinedOdds,
         currentPnL,
+        legsWon: legsResolvedWon,
+        legsLost,
       }
 
       updatePlacedParlay(updatedParlay)

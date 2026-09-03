@@ -362,7 +362,7 @@ export default function MarketPage() {
                     <h2 className="text-base lg:text-lg font-semibold">Order Book</h2>
                   </div>
                   <div className="p-3 lg:p-4">
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       {/* Yes Order Book */}
                       <div>
                         <h3 className="text-sm font-medium text-terminal-success mb-3">Yes</h3>

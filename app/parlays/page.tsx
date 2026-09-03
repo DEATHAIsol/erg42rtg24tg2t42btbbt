@@ -536,13 +536,13 @@ export default function ParlaysPage() {
                 {/* Current Parlays */}
                 {placedParlays.length > 0 && (
                   <div className="mb-8">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                       <div>
                         <h2 className="text-xl font-bold mb-1">Current Parlays</h2>
                         {(() => {
                           const stats = getParlayStats(placedParlays)
                           return (
-                            <div className="flex items-center gap-4 text-xs text-terminal-text-secondary">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-terminal-text-secondary">
                               <span>{stats.active} Active</span>
                               <span>•</span>
                               <span className="text-terminal-success">{stats.won} Won</span>
@@ -618,7 +618,7 @@ export default function ParlaysPage() {
                                 <span className="text-xs text-terminal-text-secondary flex-shrink-0">
                                   {parlay.legs.length} leg{parlay.legs.length !== 1 ? 's' : ''}
                                 </span>
-                                <div className="flex items-center gap-4 text-sm flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm flex-1 min-w-0">
                                   <div className="flex-shrink-0">
                                     <div className="text-xs text-terminal-text-secondary">Stake</div>
                                     <div className="font-semibold">{parlay.stakeAmount.toFixed(4)} SOL</div>
@@ -633,30 +633,18 @@ export default function ParlaysPage() {
                                       {(parlay.potentialPayout ?? 0).toFixed(2)} SOL
                                     </div>
                                   </div>
-                                  {parlay.status === 'active' && parlay.currentValue !== undefined && (
-                                    <>
-                                      <div className="flex-shrink-0">
-                                        <div className="text-xs text-terminal-text-secondary">Mark value</div>
-                                        <div className={`font-semibold ${
-                                          parlay.currentValue > parlay.stakeAmount ? 'text-terminal-success' : 
-                                          parlay.currentValue < parlay.stakeAmount ? 'text-terminal-danger' : 
-                                          'text-terminal-text-primary'
-                                        }`}>
-                                          {parlay.currentValue.toFixed(4)} SOL
-                                        </div>
+                                  {parlay.status === 'active' && (
+                                    <div className="flex-shrink-0">
+                                      <div className="text-xs text-terminal-text-secondary">Legs live</div>
+                                      <div className="font-semibold num">
+                                        {(parlay.legs.length - (parlay.legsLost ?? 0))}/{parlay.legs.length}
+                                        {(parlay.legsLost ?? 0) > 0 && (
+                                          <span className="ml-1.5 text-xs font-normal text-terminal-danger">
+                                            {parlay.legsLost} out
+                                          </span>
+                                        )}
                                       </div>
-                                      <div className="flex-shrink-0">
-                                        <div className="text-xs text-terminal-text-secondary">Unrealised</div>
-                                        <div className={`font-semibold flex items-center gap-1 ${
-                                          (parlay.currentPnL ?? 0) > 0 ? 'text-terminal-success' : 
-                                          (parlay.currentPnL ?? 0) < 0 ? 'text-terminal-danger' : 
-                                          'text-terminal-text-primary'
-                                        }`}>
-                                          {(parlay.currentPnL ?? 0) > 0 ? <TrendingUp size={14} /> : (parlay.currentPnL ?? 0) < 0 ? <TrendingDown size={14} /> : null}
-                                          {(parlay.currentPnL ?? 0) > 0 ? '+' : ''}{(parlay.currentPnL ?? 0).toFixed(4)} SOL
-                                        </div>
-                                      </div>
-                                    </>
+                                    </div>
                                   )}
                                   {(parlay.status === 'won' || parlay.status === 'lost') && (
                                     <>
@@ -1277,7 +1265,7 @@ export default function ParlaysPage() {
 
           {/* Market Selector Sidebar */}
           {showMarketSelector && (
-            <div className="w-[420px] border-l border-terminal-border bg-terminal-surface flex flex-col shadow-xl">
+            <div className="fixed inset-0 z-50 w-full lg:static lg:z-auto lg:w-[420px] lg:border-l border-terminal-border bg-terminal-surface flex flex-col shadow-xl">
               <div className="p-4 border-b border-terminal-border/50 bg-terminal-bg/50">
                 <div className="flex items-center justify-between mb-3">
                   <div>
