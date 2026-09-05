@@ -6,11 +6,7 @@ import { clerkMiddleware } from '@clerk/nextjs/server'
  * trading are all fully usable while signed out. Only the /api/sync routes
  * check for a session, and they fail soft for guests.
  */
-// Without Clerk keys the middleware must not run at all, or every request
-// throws. The app then simply operates guest-only.
-const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-
-export default clerkEnabled ? clerkMiddleware() : () => undefined
+export default clerkMiddleware()
 
 export const config = {
   matcher: [

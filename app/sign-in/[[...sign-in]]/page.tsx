@@ -1,6 +1,4 @@
 import { SignIn } from '@clerk/nextjs'
-
-const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
@@ -20,16 +18,7 @@ export default function SignInPage() {
           <span className="font-display text-lg font-bold tracking-tight">Probio</span>
         </Link>
 
-        {clerkEnabled ? (
-          <SignIn />
-        ) : (
-          <div className="terminal-card p-6 max-w-sm text-center">
-            <p className="text-sm text-terminal-text-secondary">
-              Accounts aren&apos;t configured on this deployment. The terminal and demo
-              trading work without one.
-            </p>
-          </div>
-        )}
+        <SignIn />
 
         <div className="mt-8 text-center">
           <p className="text-sm text-terminal-text-secondary mb-3">
