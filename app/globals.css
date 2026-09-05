@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Solana Wallet Adapter Styles */
-@import '@solana/wallet-adapter-react-ui/styles.css';
-
 @layer base {
   /* ---------- Theme tokens ---------- */
   :root,

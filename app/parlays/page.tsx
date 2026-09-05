@@ -14,7 +14,7 @@ import { useToast } from '@/components/Toast'
 import { playSuccessSound } from '@/lib/sounds'
 
 // Site fee only for parlays (no leverage = no liquidity fee)
-const SITE_FEE_SOL = 0.01 // 0.01 SOL site fee per parlay
+const SITE_FEE_ETH = 0.0005 // site fee per parlay in ETH (was 0.01 SOL)
 
 interface ParlayLeg {
   market: PolymarketMarket
@@ -46,7 +46,7 @@ export default function ParlaysPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmedConsent, setConfirmedConsent] = useState(false)
   const [expandedParlays, setExpandedParlays] = useState<Set<string>>(new Set())
-  const [solPrice, setSolPrice] = useState<number>(180) // SOL price in USD
+  const [solPrice, setSolPrice] = useState<number>(180) // ETH price in USD
 
   useEffect(() => {
     loadMarkets()
@@ -83,21 +83,21 @@ export default function ParlaysPage() {
   }, [])
 
 
-  // Fetch SOL price
+  // Fetch ETH price
   useEffect(() => {
     const fetchSolPrice = async () => {
       try {
         const response = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'
+          'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
         )
         if (response.ok) {
           const data = await response.json()
-          if (data.solana?.usd) {
-            setSolPrice(data.solana.usd)
+          if (data.ethereum?.usd) {
+            setSolPrice(data.ethereum.usd)
           }
         }
       } catch (error) {
-        console.error('Error fetching SOL price:', error)
+        console.error('Error fetching ETH price:', error)
       }
     }
     
@@ -171,7 +171,7 @@ export default function ParlaysPage() {
     const payout = parlay.actualPayout ?? parlay.potentialPayout ?? 0
     if (payout > 0) {
       adjustPaperBalance(payout)
-      toast.showSuccess(`Parlay won. ${payout.toFixed(4)} SOL credited to your balance.`)
+      toast.showSuccess(`Parlay won. ${payout.toFixed(4)} ETH credited to your balance.`)
     }
     return { ...parlay, payoutCredited: true }
   }
@@ -477,7 +477,7 @@ export default function ParlaysPage() {
   const grossPayout = stake > 0 && combinedOdds > 0 ? calculatePayout(stake, combinedOdds) : 0
   
   // Fee calculations - parlays only have site fee (no leverage = no liquidity fee)
-  const siteFee = SITE_FEE_SOL
+  const siteFee = SITE_FEE_ETH
   const totalFees = siteFee
   const totalCost = stake + totalFees
   
@@ -520,8 +520,8 @@ export default function ParlaysPage() {
                   {[
                     { label: 'Legs', value: String(parlayLegs.length), hint: parlayLegs.length < 2 ? 'min 2' : 'ready' },
                     { label: 'Odds', value: formatParlayOdds(combinedOdds), hint: combinedOdds > 0 ? `${formatImpliedChance(combinedOdds)} chance` : 'add legs' },
-                    { label: 'To pay', value: stake > 0 ? `${totalCost.toFixed(3)}` : '—', hint: 'SOL incl. fee' },
-                    { label: 'Balance', value: accountBalance.toFixed(2), hint: 'SOL' },
+                    { label: 'To pay', value: stake > 0 ? `${totalCost.toFixed(3)}` : '—', hint: 'ETH incl. fee' },
+                    { label: 'Balance', value: accountBalance.toFixed(2), hint: 'ETH' },
                   ].map((s) => (
                     <div key={s.label} className="bg-terminal-bg px-4 py-3">
                       <dd className="font-display text-xl font-bold tracking-tight num">{s.value}</dd>
@@ -621,7 +621,7 @@ export default function ParlaysPage() {
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm flex-1 min-w-0">
                                   <div className="flex-shrink-0">
                                     <div className="text-xs text-terminal-text-secondary">Stake</div>
-                                    <div className="font-semibold">{parlay.stakeAmount.toFixed(4)} SOL</div>
+                                    <div className="font-semibold">{parlay.stakeAmount.toFixed(4)} ETH</div>
                                   </div>
                                   <div className="flex-shrink-0">
                                     <div className="text-xs text-terminal-text-secondary">Odds</div>
@@ -630,7 +630,7 @@ export default function ParlaysPage() {
                                   <div className="flex-shrink-0">
                                     <div className="text-xs text-terminal-text-secondary">Pays if it lands</div>
                                     <div className="font-semibold text-terminal-success num">
-                                      {(parlay.potentialPayout ?? 0).toFixed(2)} SOL
+                                      {(parlay.potentialPayout ?? 0).toFixed(2)} ETH
                                     </div>
                                   </div>
                                   {parlay.status === 'active' && (
@@ -655,7 +655,7 @@ export default function ParlaysPage() {
                                         <div className={`font-semibold ${
                                           parlay.status === 'won' ? 'text-terminal-success' : 'text-terminal-danger'
                                         }`}>
-                                          {parlay.actualPayout !== undefined ? parlay.actualPayout.toFixed(4) : '0.0000'} SOL
+                                          {parlay.actualPayout !== undefined ? parlay.actualPayout.toFixed(4) : '0.0000'} ETH
                                         </div>
                                       </div>
                                       <div className="flex-shrink-0">
@@ -663,7 +663,7 @@ export default function ParlaysPage() {
                                         <div className={`font-semibold ${
                                           (parlay.actualPayout ?? 0) > parlay.stakeAmount ? 'text-terminal-success' : 'text-terminal-danger'
                                         }`}>
-                                          {((parlay.actualPayout ?? 0) - parlay.stakeAmount) > 0 ? '+' : ''}{((parlay.actualPayout ?? 0) - parlay.stakeAmount).toFixed(4)} SOL
+                                          {((parlay.actualPayout ?? 0) - parlay.stakeAmount) > 0 ? '+' : ''}{((parlay.actualPayout ?? 0) - parlay.stakeAmount).toFixed(4)} ETH
                                         </div>
                                       </div>
                                     </>
@@ -714,7 +714,7 @@ export default function ParlaysPage() {
                                     {parlay.status === 'partial' && (
                                       <div>
                                         <div className="text-xs text-terminal-text-secondary mb-1">Potential Payout</div>
-                                        <div className="font-semibold text-terminal-success">{parlay.potentialPayout.toFixed(4)} SOL</div>
+                                        <div className="font-semibold text-terminal-success">{parlay.potentialPayout.toFixed(4)} ETH</div>
                                       </div>
                                     )}
                                   </div>
@@ -809,7 +809,7 @@ export default function ParlaysPage() {
                                   <div className="mt-4 p-3 bg-terminal-success/10 border border-terminal-success/30 rounded-lg">
                                     <div className="flex items-center justify-between">
                                       <span className="text-sm font-semibold text-terminal-success">🎉 Parlay Won!</span>
-                                      <span className="text-lg font-bold text-terminal-success">{parlay.actualPayout.toFixed(4)} SOL</span>
+                                      <span className="text-lg font-bold text-terminal-success">{parlay.actualPayout.toFixed(4)} ETH</span>
                                     </div>
                                   </div>
                                 )}
@@ -961,7 +961,7 @@ export default function ParlaysPage() {
                     <div className="space-y-4">
                       <div>
                         <label className="text-sm font-semibold text-terminal-text-secondary mb-2 block">
-                          Stake Amount (SOL)
+                          Stake Amount (ETH)
                         </label>
                         <input
                           type="number"
@@ -989,24 +989,24 @@ export default function ParlaysPage() {
                         <div className="bg-terminal-bg border border-terminal-border rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="text-xs font-semibold text-terminal-text-secondary uppercase tracking-wide">Summary</h4>
-                            <span className="text-xs text-terminal-text-muted">SOL ≈ ${solPrice.toFixed(2)}</span>
+                            <span className="text-xs text-terminal-text-muted">ETH ≈ ${solPrice.toFixed(2)}</span>
                               </div>
                           <div className="space-y-1.5 text-sm">
                             <div className="flex justify-between">
                               <span className="text-terminal-text-secondary">Stake</span>
-                              <span className="font-medium">{stake.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${stakeUsd.toFixed(2)}</span></span>
+                              <span className="font-medium">{stake.toFixed(4)} ETH <span className="text-terminal-text-muted text-xs">${stakeUsd.toFixed(2)}</span></span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-terminal-text-secondary">Fees</span>
-                              <span className="font-medium text-terminal-warning">{totalFees.toFixed(4)} SOL</span>
+                              <span className="font-medium text-terminal-warning">{totalFees.toFixed(4)} ETH</span>
                           </div>
                             <div className="flex justify-between pt-2 border-t border-terminal-border/50">
                               <span className="text-terminal-text-primary font-medium">Total Cost</span>
-                              <span className="font-bold">{totalCost.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${totalCostUsd.toFixed(2)}</span></span>
+                              <span className="font-bold">{totalCost.toFixed(4)} ETH <span className="text-terminal-text-muted text-xs">${totalCostUsd.toFixed(2)}</span></span>
                             </div>
                             <div className="flex justify-between pt-2 border-t border-terminal-border/50">
                               <span className="text-terminal-text-secondary">Payout if Win</span>
-                              <span className="font-bold text-terminal-success">{potentialPayout.toFixed(4)} SOL <span className="text-xs">${potentialPayoutUsd.toFixed(2)}</span></span>
+                              <span className="font-bold text-terminal-success">{potentialPayout.toFixed(4)} ETH <span className="text-xs">${potentialPayoutUsd.toFixed(2)}</span></span>
                             </div>
                             <div className="flex justify-between text-xs text-terminal-text-muted">
                               <span>ROI</span>
@@ -1099,11 +1099,11 @@ export default function ParlaysPage() {
                   <div className="bg-terminal-bg border border-terminal-border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-terminal-text-secondary">Stake Amount</span>
-                      <span className="text-lg font-bold text-terminal-text-primary">{parseFloat(stakeAmount).toFixed(4)} SOL</span>
+                      <span className="text-lg font-bold text-terminal-text-primary">{parseFloat(stakeAmount).toFixed(4)} ETH</span>
                     </div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-terminal-text-secondary">Site Fee</span>
-                      <span className="text-lg font-bold text-terminal-text-primary num">{SITE_FEE_SOL} SOL</span>
+                      <span className="text-lg font-bold text-terminal-text-primary num">{SITE_FEE_ETH} ETH</span>
                     </div>
                   </div>
 
@@ -1117,7 +1117,7 @@ export default function ParlaysPage() {
                       className="mt-1 w-4 h-4 rounded border-terminal-border bg-terminal-surface text-terminal-accent focus:ring-terminal-accent focus:ring-2"
                     />
                     <label htmlFor="consent-checkbox" className="text-sm text-terminal-text-secondary cursor-pointer flex-1">
-                      I acknowledge and consent to the 0.01 SOL site fee
+                      I acknowledge and consent to the 0.01 ETH site fee
                     </label>
                   </div>
                 </div>
@@ -1199,10 +1199,10 @@ export default function ParlaysPage() {
                         const updatedPotentialPayout = calculatePayout(stakeVal, updatedCombinedOdds)
 
                         // Stake plus the flat site fee leaves the balance now.
-                        const totalDeduction = stakeVal + SITE_FEE_SOL
+                        const totalDeduction = stakeVal + SITE_FEE_ETH
                         const effectiveBalance = accountBalance
                         if (effectiveBalance < totalDeduction) {
-                          toast.showError(`Insufficient balance. Need ${totalDeduction.toFixed(4)} SOL (stake ${stakeVal.toFixed(4)} plus ${SITE_FEE_SOL} fee), have ${effectiveBalance.toFixed(4)} SOL`)
+                          toast.showError(`Insufficient balance. Need ${totalDeduction.toFixed(4)} ETH (stake ${stakeVal.toFixed(4)} plus ${SITE_FEE_ETH} fee), have ${effectiveBalance.toFixed(4)} ETH`)
                           return
                         }
 
@@ -1215,13 +1215,13 @@ export default function ParlaysPage() {
                         }
                           
                           // Create placed parlay with accurate prices (all stored as decimals 0-1)
-                          // stakeAmount is in SOL, combinedOdds is decimal (0-1), potentialPayout is in SOL
+                          // stakeAmount is in ETH, combinedOdds is decimal (0-1), potentialPayout is in ETH
                           const newParlay: PlacedParlay = {
                             id: `parlay-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                             legs: updatedLegs, // Each leg.price is stored as decimal (0-1)
-                            stakeAmount: parseFloat(stakeAmount), // In SOL
+                            stakeAmount: parseFloat(stakeAmount), // In ETH
                             combinedOdds: updatedCombinedOdds, // Decimal (0-1), product of leg prices
-                            potentialPayout: updatedPotentialPayout, // In SOL, calculated as stake / combinedOdds
+                            potentialPayout: updatedPotentialPayout, // In ETH, calculated as stake / combinedOdds
                             placedAt: new Date().toISOString(),
                             status: 'active',
                           }
@@ -1243,7 +1243,7 @@ export default function ParlaysPage() {
                           setStakeAmount('')
                           
                           playSuccessSound()
-                          toast.showSuccess(`Parlay placed successfully! Entry odds: ${(updatedCombinedOdds * 100).toFixed(2)}¢, Potential payout: ${updatedPotentialPayout.toFixed(4)} SOL`)
+                          toast.showSuccess(`Parlay placed successfully! Entry odds: ${(updatedCombinedOdds * 100).toFixed(2)}¢, Potential payout: ${updatedPotentialPayout.toFixed(4)} ETH`)
                         } catch (error) {
                           console.error('Error placing parlay:', error)
                           toast.showError('Error placing parlay. Please try again.')

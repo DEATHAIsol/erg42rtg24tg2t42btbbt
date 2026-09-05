@@ -29,11 +29,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Probio | Prediction Markets on Solana',
+    default: 'Probio | Prediction Markets on Robinhood Chain',
     template: '%s · Probio',
   },
   description:
-    'A professional trading terminal for prediction markets on Solana. Trade outcomes, build parlays, and practice with paper trading. No account required.',
+    'A professional trading terminal for prediction markets on Robinhood Chain. Trade outcomes, build parlays, and practice with paper trading. No account required.',
   icons: {
     icon: '/icon.png',
   },

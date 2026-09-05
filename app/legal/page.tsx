@@ -87,7 +87,7 @@ Delegate specific authorities as appropriate
 
 ProbioMarkets B.V. operates as a technology company providing:
 Information Services: Delivering news and information about global current events through digital platforms
-Technology Platform: Operating a decentralized platform interface that enables users to interact with blockchain-based prediction market protocols on the Solana network
+Technology Platform: Operating a decentralized platform interface that enables users to interact with blockchain-based prediction market protocols on the Robinhood Chain
 Software Licensing: Licensing and operating software technologies related to prediction markets and blockchain applications
 
 4.2 Scope of Operations
@@ -95,7 +95,7 @@ Software Licensing: Licensing and operating software technologies related to pre
 The company's operations include but are not limited to:
 Platform Development: Creating, maintaining, and improving web-based interfaces and applications
 Information Aggregation: Collecting, curating, and presenting information about global events
-Blockchain Integration: Providing user interfaces that connect to decentralized protocols on the Solana blockchain
+Blockchain Integration: Providing user interfaces that connect to decentralized protocols on the Robinhood Chain
 User Services: Offering customer support, educational resources, and community engagement
 Technology Research: Advancing blockchain technology applications and prediction market mechanisms
 
@@ -109,7 +109,7 @@ Does NOT operate a cryptoasset exchange or derivatives exchange
 Does NOT provide trade execution or clearing services
 Does NOT take custody of user funds or cryptoassets
 Does NOT provide investment advice or financial advisory services
-Does NOT control or operate the underlying Solana blockchain network
+Does NOT control or operate the underlying Robinhood Chain network
 Does NOT control the resolution of prediction market contracts
 
 The company operates as a technology services provider, offering software interfaces that enable users to independently interact with decentralized blockchain protocols.
@@ -246,7 +246,7 @@ Educational content and materials
 7.3 Open Source Components
 
 Certain platform components may be developed using or integrate with open source software, including but not limited to:
-Solana blockchain protocols and tools
+Robinhood Chain protocols and tools
 Web3 libraries and frameworks
 Other open source components as documented
 All open source usage complies with applicable licenses (MIT, Apache 2.0, GPL, AGPL, etc.).

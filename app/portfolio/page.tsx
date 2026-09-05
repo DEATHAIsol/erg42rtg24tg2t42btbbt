@@ -231,7 +231,7 @@ export default function PortfolioPage() {
     
     const confirmed = await confirm({
       title: 'Close Position',
-      message: `Are you sure you want to close this position?\n\nP&L: ${position.currentPnL > 0 ? '+' : ''}${position.currentPnL.toFixed(4)} SOL`,
+      message: `Are you sure you want to close this position?\n\nP&L: ${position.currentPnL > 0 ? '+' : ''}${position.currentPnL.toFixed(4)} ETH`,
       confirmText: 'Close Position',
       cancelText: 'Cancel',
       type: position.currentPnL >= 0 ? 'success' : 'warning',
@@ -264,21 +264,21 @@ export default function PortfolioPage() {
   const statCards = [
     {
       label: 'Portfolio value',
-      value: `${portfolioValue.totalValue.toFixed(4)} SOL`,
+      value: `${portfolioValue.totalValue.toFixed(4)} ETH`,
       icon: Briefcase,
       sub: undefined as string | undefined,
       accent: 'text-terminal-text-primary',
     },
     {
       label: 'Available balance',
-      value: `${portfolioValue.availableBalance.toFixed(4)} SOL`,
+      value: `${portfolioValue.availableBalance.toFixed(4)} ETH`,
       icon: Wallet,
       sub: undefined as string | undefined,
       accent: 'text-terminal-text-primary',
     },
     {
       label: 'Unrealized P&L',
-      value: `${portfolioValue.totalPnL > 0 ? '+' : ''}${portfolioValue.totalPnL.toFixed(4)} SOL`,
+      value: `${portfolioValue.totalPnL > 0 ? '+' : ''}${portfolioValue.totalPnL.toFixed(4)} ETH`,
       icon: BarChart3,
       sub: undefined as string | undefined,
       accent:
@@ -477,7 +477,7 @@ export default function PortfolioPage() {
                               }`}>
                                 <div className="flex items-center justify-end gap-1.5">
                                   {position.currentPnL > 0 ? <TrendingUp size={14} /> : position.currentPnL < 0 ? <TrendingDown size={14} /> : null}
-                                  <span>{position.currentPnL > 0 ? '+' : ''}{position.currentPnL.toFixed(4)} SOL</span>
+                                  <span>{position.currentPnL > 0 ? '+' : ''}{position.currentPnL.toFixed(4)} ETH</span>
                                 </div>
                               </td>
                               <td className="px-4 py-4 text-right">
@@ -674,7 +674,7 @@ export default function PortfolioPage() {
                               }`}>
                                 <div className="flex items-center justify-end gap-1.5">
                                   {(position.pnl ?? 0) > 0 ? <TrendingUp size={14} /> : (position.pnl ?? 0) < 0 ? <TrendingDown size={14} /> : null}
-                                  <span>{(position.pnl ?? 0) > 0 ? '+' : ''}{(position.pnl ?? 0).toFixed(4)} SOL</span>
+                                  <span>{(position.pnl ?? 0) > 0 ? '+' : ''}{(position.pnl ?? 0).toFixed(4)} ETH</span>
                                 </div>
                               </td>
                               <td className="px-4 py-4 text-right">

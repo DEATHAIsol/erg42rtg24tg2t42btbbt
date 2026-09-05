@@ -55,7 +55,7 @@ export function HowItWorksModal({ isOpen, onClose }: HowItWorksModalProps) {
                 2
               </div>
               <p className="text-terminal-text-primary pt-1">
-                Buy positions on the market using SOL
+                Buy positions on the market using ETH
               </p>
             </div>
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Wallet, Copy, ExternalLink, FlaskConical, Check } from 'lucide-react'
 import { useCustodialWallet } from '@/lib/useCustodialWallet'
+import { explorerAddressUrl } from '@/lib/chain'
 import { DepositModal } from './DepositModal'
 
 /**
@@ -47,7 +48,7 @@ export function WalletButton() {
       >
         <FlaskConical size={14} className="text-terminal-warning" />
         <span className="text-sm font-medium num">
-          {balance.toFixed(2)} <span className="text-terminal-text-muted font-sans">SOL</span>
+          {balance.toFixed(2)} <span className="text-terminal-text-muted font-sans">ETH</span>
         </span>
         <span className="text-[10px] font-medium text-terminal-warning uppercase tracking-wider hidden lg:inline">
           Demo
@@ -67,7 +68,7 @@ export function WalletButton() {
           title={
             mode === 'demo'
               ? 'Practice balance. Switch to Live to deposit'
-              : 'Deposit SOL'
+              : 'Deposit ETH'
           }
         >
           {mode === 'demo' ? (
@@ -77,7 +78,7 @@ export function WalletButton() {
           )}
           <span className="text-sm font-medium num">
             {balanceUnknown ? '—' : balance.toFixed(4)}{' '}
-            <span className="text-terminal-text-muted font-sans">SOL</span>
+            <span className="text-terminal-text-muted font-sans">ETH</span>
           </span>
         </button>
 
@@ -126,17 +127,17 @@ export function WalletButton() {
                 </span>
               ) : (
                 <>
-                  {`${address.slice(0, 4)}…${address.slice(-4)}`}
+                  {`${address.slice(0, 6)}…${address.slice(-4)}`}
                   <Copy size={12} className="opacity-60" />
                 </>
               )}
             </button>
 
             <button
-              onClick={() => window.open(`https://solscan.io/account/${address}`, '_blank')}
+              onClick={() => window.open(explorerAddressUrl(address), '_blank')}
               className="icon-button hidden lg:inline-flex"
-              title="View on Solscan"
-              aria-label="View on Solscan"
+              title="View on explorer"
+              aria-label="View on explorer"
             >
               <ExternalLink size={15} />
             </button>

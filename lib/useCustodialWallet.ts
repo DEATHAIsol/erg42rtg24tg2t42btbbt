@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthState } from './auth'
-import { PublicKey } from '@solana/web3.js'
 import { getPaperTradingState } from './paper-trading'
 import { getDemoMode, setDemoMode as persistDemoMode } from './demo-mode'
 
@@ -15,7 +14,7 @@ export type AccountMode = 'live' | 'demo'
  *               assigns a practice balance automatically and cannot be switched
  *               to live mode.
  * Signed in  -> LIVE by default, showing the account's real on-chain balance
- *               (0 SOL until funded). Demo is an explicit opt-in toggle.
+ *               (0 ETH until funded). Demo is an explicit opt-in toggle.
  */
 export function useCustodialWallet() {
   const { isLoaded, isSignedIn } = useAuthState()
@@ -91,14 +90,8 @@ export function useCustodialWallet() {
    */
   const balance = mode === 'demo' ? paperBalance : liveBalance ?? 0
 
-  let publicKey: PublicKey | null = null
-  if (address) {
-    try {
-      publicKey = new PublicKey(address)
-    } catch {
-      publicKey = null
-    }
-  }
+  // Call sites only ever read .toString() on this.
+  const publicKey = address ? { toString: () => address } : null
 
   return {
     publicKey,

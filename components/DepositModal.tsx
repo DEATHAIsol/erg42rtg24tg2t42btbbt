@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Copy, QrCode, ExternalLink, Check, ShieldCheck } from 'lucide-react'
+import { explorerAddressUrl, CHAIN_NAME, CHAIN_ID } from '@/lib/chain'
 import { ModalPortal } from './ModalPortal'
 
 interface DepositModalProps {
@@ -49,14 +50,14 @@ export function DepositModal({ walletAddress, onClose }: DepositModalProps) {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Deposit SOL"
+        aria-label="Deposit ETH"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 p-5 border-b border-terminal-border flex-shrink-0">
           <div>
-            <h2 className="text-lg font-bold mb-1">Deposit SOL</h2>
+            <h2 className="text-lg font-bold mb-1">Deposit ETH</h2>
             <p className="text-sm text-terminal-text-secondary">
-              Send SOL to this address to fund your account.
+              Send ETH to this address to fund your account.
             </p>
           </div>
           <button onClick={onClose} className="icon-button flex-shrink-0" aria-label="Close">
@@ -107,7 +108,7 @@ export function DepositModal({ walletAddress, onClose }: DepositModalProps) {
           <div className="p-4 bg-terminal-bg/60 rounded-lg border border-terminal-border">
             <p className="text-xs font-semibold text-terminal-text-primary mb-2">Before you send</p>
             <ul className="text-xs text-terminal-text-secondary space-y-1.5 list-disc list-inside marker:text-terminal-text-muted">
-              <li>Send only SOL on the Solana network. Other assets will be lost</li>
+              <li>Send only ETH on <strong className="text-terminal-text-primary">{CHAIN_NAME}</strong> (chain ID {CHAIN_ID}). Funds sent on Ethereum mainnet or another network will not arrive</li>
               <li>Check the address matches before confirming</li>
               <li>Deposits usually confirm within a minute</li>
             </ul>
@@ -126,12 +127,12 @@ export function DepositModal({ walletAddress, onClose }: DepositModalProps) {
         <div className="flex gap-2 p-5 border-t border-terminal-border flex-shrink-0">
           <button
             onClick={() =>
-              window.open(`https://solscan.io/account/${walletAddress}`, '_blank')
+              window.open(explorerAddressUrl(walletAddress), '_blank')
             }
             className="terminal-button flex-1"
           >
             <ExternalLink size={15} />
-            Solscan
+            Explorer
           </button>
           <button onClick={onClose} className="terminal-button-primary flex-1">
             Done
