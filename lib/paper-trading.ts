@@ -30,14 +30,14 @@ export interface PaperOrder {
 }
 
 export interface PaperTradingState {
-  balance: number // SOL balance
+  balance: number // ETH balance
   positions: PaperPosition[]
   orders: PaperOrder[]
   tradeHistory: PaperPosition[] // Closed positions
 }
 
 const STORAGE_KEY = 'paper-trading-state'
-const INITIAL_BALANCE = 100 // Starting with 100 SOL for paper trading
+const INITIAL_BALANCE = 10 // 10 ETH practice balance (100 was a SOL-era figure)
 
 // Get or initialize paper trading state
 export function getPaperTradingState(): PaperTradingState {
@@ -100,7 +100,7 @@ export function openPosition(
   const required = cost + 0.01 // small buffer
 
   if (state.balance < required) {
-    return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} SOL (including 0.01 SOL buffer), have ${state.balance.toFixed(4)} SOL` }
+    return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} ETH (including 0.01 ETH buffer), have ${state.balance.toFixed(4)} ETH` }
   }
 
   const position: PaperPosition = {
@@ -187,7 +187,7 @@ export function placePaperOrder(
     const required = cost + 0.01
     
     if (state.balance < required) {
-      return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} SOL (including 0.01 SOL buffer), have ${state.balance.toFixed(4)} SOL` }
+      return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} ETH (including 0.01 ETH buffer), have ${state.balance.toFixed(4)} ETH` }
     }
 
     // Reserve the cost (deduct from balance)
@@ -328,7 +328,7 @@ export function adjustPaperBalance(delta: number): { success: boolean; balance: 
   return { success: true, balance: state.balance }
 }
 
-// Add SOL to paper trading balance (for testing)
+// Add ETH to paper trading balance (for testing)
 export function addFunds(amount: number): number {
   if (typeof window === 'undefined') return 0
   
@@ -336,7 +336,7 @@ export function addFunds(amount: number): number {
   state.balance = (state.balance || 0) + amount
   saveState(state)
   window.dispatchEvent(new CustomEvent('paper-trading-updated'))
-  console.log(`✅ Added ${amount} SOL to paper trading balance. New balance: ${state.balance} SOL`)
+  console.log(`✅ Added ${amount} ETH to paper trading balance. New balance: ${state.balance} ETH`)
   return state.balance
 }
 

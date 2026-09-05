@@ -26,7 +26,7 @@ export function SiteFooter() {
               </span>
             </Link>
             <p className="text-sm text-terminal-text-secondary leading-relaxed">
-              A professional trading terminal for prediction markets on Solana.
+              A professional trading terminal for prediction markets on Robinhood Chain.
               Market data sourced from the Polymarket API.
             </p>
           </div>

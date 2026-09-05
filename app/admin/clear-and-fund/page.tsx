@@ -13,11 +13,11 @@ export default function ClearAndFundPage() {
       // Clear all parlays
       clearAllParlays()
       
-      // Add 1000 SOL to paper trading balance
+      // Add 1000 ETH to paper trading balance
       const newBalance = addFunds(1000)
       
       setStatus('success')
-      setMessage(`✅ Successfully cleared all parlays and added 1000 SOL. New balance: ${newBalance} SOL`)
+      setMessage(`✅ Successfully cleared all parlays and added 1000 ETH. New balance: ${newBalance} ETH`)
       
       // Redirect to home page after 2 seconds
       setTimeout(() => {

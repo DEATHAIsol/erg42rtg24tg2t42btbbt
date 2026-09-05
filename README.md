@@ -1,6 +1,6 @@
 # ProBioMarkets Terminal
 
-A decentralized prediction market platform built on Solana, featuring real-time trading, leverage, parlays, and liquidity pools.
+A decentralized prediction market platform built on Robinhood Chain, featuring real-time trading, leverage, parlays, and liquidity pools.
 
 ## Features
 
@@ -10,14 +10,14 @@ A decentralized prediction market platform built on Solana, featuring real-time 
 - 🎲 **Parlays**: Combine multiple markets for multiplied returns
 - 💧 **Liquidity Pools**: Earn yield by providing liquidity
 - 📱 **Paper Trading**: Practice with virtual funds
-- 🔒 **Custodial Wallets**: Secure Solana wallet management
+- 🔒 **Custodial Wallets**: Secure Robinhood Chain wallet management
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- A Solana wallet (auto-created on first use)
+- A Robinhood Chain wallet (auto-created on first use)
 
 ### Installation
 
@@ -68,6 +68,21 @@ The documentation will be available at `http://localhost:3000`
 └── data/                  # SQLite database
 ```
 
+## Chain
+
+Robinhood Chain, an Arbitrum-stack Ethereum L2. The native asset is ETH (18
+decimals) and gas is paid in ETH.
+
+| | Mainnet | Testnet |
+|---|---|---|
+| Chain ID | 4663 | 46630 |
+| RPC | `rpc.mainnet.chain.robinhood.com` | `rpc.testnet.chain.robinhood.com` |
+| Explorer | `robinhoodchain.blockscout.com` | `explorer.testnet.chain.robinhood.com` |
+
+Public RPCs are rate limited with no SLA. Set `NEXT_PUBLIC_RPC_URL` to an
+Alchemy endpoint for anything beyond local development. Switch networks with
+`NEXT_PUBLIC_CHAIN_NETWORK=testnet`.
+
 ## Accounts (Clerk)
 
 Accounts are **optional**. The terminal, market data, paper trading, parlays and
@@ -88,7 +103,7 @@ progress is pushed up rather than discarded.
 Create a `.env.local` file:
 
 ```env
-NEXT_PUBLIC_SOLANA_RPC_URL=your_rpc_url_here
+NEXT_PUBLIC_CHAIN_NETWORK=mainnet   # or testnet
 
 # Clerk (required for accounts; the app still runs guest-only without them)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
@@ -106,7 +121,7 @@ DATABASE_URL=postgres://...
 - **Framework**: Next.js 14
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Blockchain**: Solana
+- **Chain**: Robinhood Chain (Arbitrum L2 on Ethereum, chain ID 4663)
 - **Database**: SQLite (better-sqlite3)
 - **Charts**: TradingView Lightweight Charts
 - **Documentation**: Mintlify

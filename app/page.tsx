@@ -28,7 +28,7 @@ const capabilities = [
     key: 'WALLET',
     title: 'Keys made in your browser',
     body:
-      'A Solana keypair is generated locally the moment you ask for one. Export it whenever you want. It never leaves your device.',
+      'A Ethereum keypair is generated locally the moment you ask for one. Export it whenever you want. It never leaves your device.',
   },
   {
     key: 'ACCOUNT',
@@ -38,7 +38,7 @@ const capabilities = [
   },
   {
     key: 'PAPER',
-    title: '100 SOL practice balance',
+    title: '10 ETH practice balance',
     body:
       'Demo mode runs the same interface against the same live prices with simulated funds. Nothing at risk while you learn the desk.',
   },
@@ -77,7 +77,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-3 mb-8">
                   <span className="h-px w-8 bg-terminal-accent" />
                   <span className="section-label !text-terminal-accent">
-                    Prediction markets · Solana
+                    Prediction markets · Robinhood Chain
                   </span>
                 </div>
 
@@ -111,8 +111,8 @@ export default function LandingPage() {
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-7">
                   {[
                     ['Max leverage', '10×'],
-                    ['Settlement asset', 'SOL'],
-                    ['Practice balance', '100'],
+                    ['Settles in', 'ETH'],
+                    ['Practice balance', '10 ETH'],
                     ['Account needed', 'No'],
                   ].map(([label, value]) => (
                     <div key={label}>
