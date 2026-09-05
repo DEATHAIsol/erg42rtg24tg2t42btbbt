@@ -14,7 +14,7 @@ export default function ClearAndFundPage() {
       clearAllParlays()
       
       // Add 1000 ETH to paper trading balance
-      const newBalance = addFunds(1000)
+      const newBalance = addFunds(50)
       
       setStatus('success')
       setMessage(`✅ Successfully cleared all parlays and added 1000 ETH. New balance: ${newBalance} ETH`)

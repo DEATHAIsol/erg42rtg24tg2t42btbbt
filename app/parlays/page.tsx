@@ -12,9 +12,9 @@ import { useRouter } from 'next/navigation'
 import { getBestPrice } from '@/lib/clob-client'
 import { useToast } from '@/components/Toast'
 import { playSuccessSound } from '@/lib/sounds'
+import { SITE_FEE_ETH } from '@/lib/trading-config'
 
 // Site fee only for parlays (no leverage = no liquidity fee)
-const SITE_FEE_ETH = 0.001 // flat site fee per parlay, in ETH
 
 interface ParlayLeg {
   market: PolymarketMarket
@@ -82,7 +82,6 @@ export default function ParlaysPage() {
     }
   }, [])
 
-
   // Fetch ETH price
   useEffect(() => {
     const fetchEthPrice = async () => {
@@ -106,9 +105,7 @@ export default function ParlaysPage() {
     return () => clearInterval(interval)
   }, [])
 
-
   // Balance now comes from useCustodialWallet (accountBalance).
-
 
   const loadPlacedParlays = async () => {
     try {

@@ -8,10 +8,10 @@ import { getOrderBook, getBestPrice, placeOrder, OrderType, Side } from '@/lib/c
 import { placePaperOrder } from '@/lib/paper-trading'
 import { useToast } from './Toast'
 import { playSuccessSound } from '@/lib/sounds'
+import { SITE_FEE_ETH, BALANCE_BUFFER_ETH, QUICK_AMOUNTS_ETH } from '@/lib/trading-config'
 
 // Trading fees
 const TRADING_FEE_PERCENT = 0.02 // 2% trading fee
-const SITE_FEE_ETH = 0.001 // flat site fee per trade, in ETH
 
 interface TradingPanelProps {
   market: PolymarketMarket
@@ -68,8 +68,6 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
       clearInterval(interval)
     }
   }, [market.id, selectedOutcome])
-
-
 
   
   useEffect(() => {
@@ -172,7 +170,6 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
     }
   }
 
-
   /**
    * Polymarket returns bids ascending and asks descending, so slicing from the
    * front yields the *worst* orders — the far tail of the book — which looked
@@ -230,11 +227,11 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
       const tradingFee = margin * TRADING_FEE_PERCENT
       const totalFees = tradingFee + SITE_FEE_ETH
       const totalCost = margin + totalFees // Match what's displayed: margin + fees
-      const required = totalCost + 0.01 // Add 0.01 ETH buffer
+      const required = totalCost + BALANCE_BUFFER_ETH
       const effectiveBalance = accountBalance
       if (effectiveBalance < required) {
         toast.showError(
-          `Insufficient ${mode === 'demo' ? 'demo' : ''} balance. Need ${required.toFixed(4)} ETH (includes 0.01 ETH buffer), have ${effectiveBalance.toFixed(4)} ETH`.replace('  ', ' ')
+          `Insufficient ${mode === 'demo' ? 'demo' : ''} balance. Need ${required.toFixed(4)} ETH (includes fee and buffer), have ${effectiveBalance.toFixed(4)} ETH`.replace('  ', ' ')
         )
         return
       }
@@ -535,7 +532,7 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-terminal-text-muted pointer-events-none">ETH</span>
             </div>
             <div className="flex gap-1.5 mt-2">
-              {[0.05, 0.1, 0.5, 1].map((val) => (
+              {QUICK_AMOUNTS_ETH.map((val) => (
                 <button
                   key={val}
                   onClick={() => setAmount(val.toString())}

@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import { TerminalHeader } from '@/components/TerminalHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MarketTicker, FeaturedMarkets } from '@/components/LiveMarketPreview'
+import { INITIAL_DEMO_BALANCE_ETH } from '@/lib/trading-config'
 
 /* Capability spec-sheet rows — typographic, not icon cards */
 const capabilities = [
@@ -38,7 +39,7 @@ const capabilities = [
   },
   {
     key: 'PAPER',
-    title: '10 ETH practice balance',
+    title: `${INITIAL_DEMO_BALANCE_ETH} ETH practice balance`,
     body:
       'Demo mode runs the same interface against the same live prices with simulated funds. Nothing at risk while you learn the desk.',
   },
@@ -112,7 +113,7 @@ export default function LandingPage() {
                   {[
                     ['Max leverage', '10×'],
                     ['Settles in', 'ETH'],
-                    ['Practice balance', '10 ETH'],
+                    ['Practice balance', `${INITIAL_DEMO_BALANCE_ETH} ETH`],
                     ['Account needed', 'No'],
                   ].map(([label, value]) => (
                     <div key={label}>
