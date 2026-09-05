@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { X, Save, Monitor, Moon, Sun } from 'lucide-react'
 import { ModalPortal } from './ModalPortal'
-import { RPC_URL, CHAIN_NAME } from '@/lib/chain'
 import { applyTheme, readTheme } from '@/lib/useTheme'
 
 interface SettingsModalProps {
@@ -236,12 +235,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             {settings.showAdvanced && (
               <div className="mt-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">{CHAIN_NAME} RPC endpoint</label>
+                  <label className="block text-sm font-medium mb-2">RPC Endpoint</label>
                   <input
                     type="text"
-                    placeholder={RPC_URL}
+                    placeholder="https://api.mainnet-beta.solana.com"
                     className="terminal-input w-full"
-                    defaultValue={RPC_URL}
+                    defaultValue={process.env.NEXT_PUBLIC_SOLANA_RPC_URL || ''}
                   />
                 </div>
                 <div>

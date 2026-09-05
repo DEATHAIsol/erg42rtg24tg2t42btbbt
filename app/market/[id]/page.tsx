@@ -491,7 +491,7 @@ export default function MarketPage() {
                             <div className={`text-sm font-semibold ${
                               pnl > 0 ? 'text-terminal-success' : pnl < 0 ? 'text-terminal-danger' : ''
                             }`}>
-                              {pnl > 0 ? '+' : ''}{pnl.toFixed(4)} ETH P&L
+                              {pnl > 0 ? '+' : ''}{pnl.toFixed(4)} SOL P&L
                             </div>
                           </div>
                         )

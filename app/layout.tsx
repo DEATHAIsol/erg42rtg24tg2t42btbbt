@@ -6,6 +6,9 @@ import { Providers } from '@/components/Providers'
 import { clerkAppearance } from '@/lib/clerk-appearance'
 import { ThemeScript } from '@/components/ThemeScript'
 
+// Inlined at build time; absent keys mean the app runs guest-only.
+const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
@@ -26,11 +29,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Probio | Prediction Markets on Robinhood Chain',
+    default: 'Probio | Prediction Markets on Solana',
     template: '%s · Probio',
   },
   description:
-    'A professional trading terminal for prediction markets on Robinhood Chain. Trade outcomes, build parlays, and practice with paper trading. No account required.',
+    'A professional trading terminal for prediction markets on Solana. Trade outcomes, build parlays, and practice with paper trading. No account required.',
   icons: {
     icon: '/icon.png',
   },
@@ -53,9 +56,13 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body>
-        <ClerkProvider appearance={clerkAppearance}>
+        {clerkEnabled ? (
+          <ClerkProvider appearance={clerkAppearance}>
+            <Providers>{children}</Providers>
+          </ClerkProvider>
+        ) : (
           <Providers>{children}</Providers>
-        </ClerkProvider>
+        )}
       </body>
     </html>
   )

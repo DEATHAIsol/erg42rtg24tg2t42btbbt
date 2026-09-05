@@ -62,13 +62,13 @@ We may share your information with:
 - Service Providers: Cloud hosting, analytics, fraud detection, customer support tools
 - Legal Requirements: Law enforcement, regulators, courts when legally required
 - Business Transfers: In case of merger, acquisition, or sale of assets
-- Blockchain Networks: Your wallet address and transactions are public on Robinhood Chain
+- Blockchain Networks: Your wallet address and transactions are public on Solana
 
 We never sell your personal information to third parties.
 
 Your Blockchain Activity is Public
 
-Because we operate on Robinhood Chain, your wallet address and all transactions are permanently recorded on a public blockchain. Anyone can view this information. We cannot delete or modify blockchain data.
+Because we operate on Solana, your wallet address and all transactions are permanently recorded on a public blockchain. Anyone can view this information. We cannot delete or modify blockchain data.
 
 Cookies & Tracking Technologies
 

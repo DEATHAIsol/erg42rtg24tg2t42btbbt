@@ -1,7 +1,5 @@
 'use client'
 
-import { INITIAL_DEMO_BALANCE_ETH, BALANCE_BUFFER_ETH } from './trading-config'
-
 export interface PaperPosition {
   id: string
   marketId: string
@@ -32,14 +30,14 @@ export interface PaperOrder {
 }
 
 export interface PaperTradingState {
-  balance: number // ETH balance
+  balance: number // SOL balance
   positions: PaperPosition[]
   orders: PaperOrder[]
   tradeHistory: PaperPosition[] // Closed positions
 }
 
 const STORAGE_KEY = 'paper-trading-state'
-const INITIAL_BALANCE = INITIAL_DEMO_BALANCE_ETH
+const INITIAL_BALANCE = 100 // Starting with 100 SOL for paper trading
 
 // Get or initialize paper trading state
 export function getPaperTradingState(): PaperTradingState {
@@ -99,10 +97,10 @@ export function openPosition(
   // charged on top — previously they were shown in the UI but never deducted.
   const margin = (size * entryPrice) / leverage
   const cost = margin + fees
-  const required = cost + BALANCE_BUFFER_ETH
+  const required = cost + 0.01 // small buffer
 
   if (state.balance < required) {
-    return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} ETH (including 0.01 ETH buffer), have ${state.balance.toFixed(4)} ETH` }
+    return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} SOL (including 0.01 SOL buffer), have ${state.balance.toFixed(4)} SOL` }
   }
 
   const position: PaperPosition = {
@@ -186,10 +184,10 @@ export function placePaperOrder(
   } else {
     // Limit orders are stored
     const cost = (size * price) / leverage + fees
-    const required = cost + BALANCE_BUFFER_ETH
+    const required = cost + 0.01
     
     if (state.balance < required) {
-      return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} ETH (including 0.01 ETH buffer), have ${state.balance.toFixed(4)} ETH` }
+      return { success: false, error: `Insufficient balance. Need ${required.toFixed(4)} SOL (including 0.01 SOL buffer), have ${state.balance.toFixed(4)} SOL` }
     }
 
     // Reserve the cost (deduct from balance)
@@ -330,7 +328,7 @@ export function adjustPaperBalance(delta: number): { success: boolean; balance: 
   return { success: true, balance: state.balance }
 }
 
-// Add ETH to paper trading balance (for testing)
+// Add SOL to paper trading balance (for testing)
 export function addFunds(amount: number): number {
   if (typeof window === 'undefined') return 0
   
@@ -338,7 +336,7 @@ export function addFunds(amount: number): number {
   state.balance = (state.balance || 0) + amount
   saveState(state)
   window.dispatchEvent(new CustomEvent('paper-trading-updated'))
-  console.log(`✅ Added ${amount} ETH to paper trading balance. New balance: ${state.balance} ETH`)
+  console.log(`✅ Added ${amount} SOL to paper trading balance. New balance: ${state.balance} SOL`)
   return state.balance
 }
 

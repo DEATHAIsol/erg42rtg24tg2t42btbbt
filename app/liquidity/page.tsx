@@ -43,7 +43,7 @@ export default function LiquidityPage() {
                 </span>
               </h1>
               <p className="text-lg text-terminal-text-secondary leading-relaxed">
-                The Probio liquidity pool will let you deposit ETH to back market-making
+                The Probio liquidity pool will let you deposit SOL to back market-making
                 activity and earn a share of the generated yield. Withdraw anytime.
               </p>
             </div>
@@ -81,7 +81,7 @@ export default function LiquidityPage() {
                     <label className="section-label">
                       {activeAction === 'deposit' ? 'Amount to deposit' : 'Amount to withdraw'}
                     </label>
-                    <span className="text-xs text-terminal-text-muted">ETH</span>
+                    <span className="text-xs text-terminal-text-muted">SOL</span>
                   </div>
                   <div className="relative">
                     <input
@@ -93,7 +93,7 @@ export default function LiquidityPage() {
                       className="terminal-input !py-3.5 !text-2xl font-bold num pr-16"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-terminal-text-muted pointer-events-none">
-                      ETH
+                      SOL
                     </span>
                   </div>
                 </div>
@@ -109,19 +109,19 @@ export default function LiquidityPage() {
                       <div>
                         <div className="text-xs text-terminal-text-muted mb-1">Monthly</div>
                         <div className="text-sm font-semibold num">
-                          {(projectedAnnual / 12).toFixed(3)} ETH
+                          {(projectedAnnual / 12).toFixed(3)} SOL
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-terminal-text-muted mb-1">Quarterly</div>
                         <div className="text-sm font-semibold num">
-                          {(projectedAnnual / 4).toFixed(3)} ETH
+                          {(projectedAnnual / 4).toFixed(3)} SOL
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-terminal-text-muted mb-1">Annual</div>
                         <div className="text-sm font-bold text-terminal-accent num">
-                          {projectedAnnual.toFixed(3)} ETH
+                          {projectedAnnual.toFixed(3)} SOL
                         </div>
                       </div>
                     </div>
@@ -153,7 +153,7 @@ export default function LiquidityPage() {
                     <div>
                       <h2 className="text-xl font-bold mb-2">How the pool works</h2>
                       <p className="text-sm text-terminal-text-secondary leading-relaxed max-w-lg">
-                        Deposited ETH backs market-making on prediction markets and is put
+                        Deposited SOL backs market-making on prediction markets and is put
                         to work across conservative on-chain strategies. Yield accrues to
                         the pool continuously and your share is claimable at any time.
                         Deposits are never locked.

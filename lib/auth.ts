@@ -1,17 +1,37 @@
 'use client'
 
-import { useAuth } from '@clerk/nextjs'
+import { useAuth as useClerkAuth } from '@clerk/nextjs'
 
 /**
- * Thin pass-through over Clerk's own hook.
+ * Whether Clerk is configured for this build.
  *
- * This used to branch on whether a publishable key was present, picking a stub
- * hook when it was not. That branch is a build-time constant in the client
- * bundle but read per-request on the server, so the two could disagree and the
- * resulting hydration mismatch stopped Clerk initialising at all. Clerk is now
- * a hard dependency, which is the configuration Clerk supports.
+ * NEXT_PUBLIC_* values are inlined at build time, so this is a compile-time
+ * constant — it can never change between renders, which is what makes the
+ * hook selection below safe.
  */
-export function useAuthState() {
-  const { isLoaded, isSignedIn, userId } = useAuth()
+export const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
+interface AuthState {
+  isLoaded: boolean
+  isSignedIn: boolean
+  userId: string | null
+}
+
+/** Signed-out stand-in used when no Clerk keys are present. */
+function useNoAuth(): AuthState {
+  return { isLoaded: true, isSignedIn: false, userId: null }
+}
+
+function useRealAuth(): AuthState {
+  const { isLoaded, isSignedIn, userId } = useClerkAuth()
   return { isLoaded, isSignedIn: !!isSignedIn, userId: userId ?? null }
 }
+
+/**
+ * Auth state that works with or without Clerk configured.
+ *
+ * Without keys the app still builds and runs — everyone is simply a guest,
+ * which is a supported first-class mode. The alternative (ClerkProvider
+ * throwing during prerender) takes the whole build down.
+ */
+export const useAuthState: () => AuthState = clerkEnabled ? useRealAuth : useNoAuth

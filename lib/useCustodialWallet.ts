@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthState } from './auth'
+import { PublicKey } from '@solana/web3.js'
 import { getPaperTradingState } from './paper-trading'
 import { getDemoMode, setDemoMode as persistDemoMode } from './demo-mode'
 
@@ -13,8 +14,8 @@ export type AccountMode = 'live' | 'demo'
  * Signed out -> demo is forced. A guest has no funded address, so the terminal
  *               assigns a practice balance automatically and cannot be switched
  *               to live mode.
- * Signed in  -> LIVE by default, showing the account's real Robinhood Chain
- *               balance (0 ETH until funded). Demo is an explicit opt-in.
+ * Signed in  -> LIVE by default, showing the account's real on-chain balance
+ *               (0 SOL until funded). Demo is an explicit opt-in toggle.
  */
 export function useCustodialWallet() {
   const { isLoaded, isSignedIn } = useAuthState()
@@ -23,17 +24,6 @@ export function useCustodialWallet() {
   const [paperBalance, setPaperBalance] = useState(0)
   const [demoPreference, setDemoPreference] = useState(false)
   const [ready, setReady] = useState(false)
-
-  /**
-   * Clerk can stall (slow network, a blocking extension, a misconfigured
-   * instance). Without a deadline `ready` never flips and the header sits on a
-   * skeleton forever with no way to sign in. Fall back to the guest/demo view
-   * so the terminal stays usable.
-   */
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), 4000)
-    return () => clearTimeout(t)
-  }, [])
 
   /* ------------------- Resolve the account address + balance ---------------- */
   const loadAccount = useCallback(async () => {
@@ -101,8 +91,14 @@ export function useCustodialWallet() {
    */
   const balance = mode === 'demo' ? paperBalance : liveBalance ?? 0
 
-  // Kept for call sites that only ever read `.toString()`.
-  const publicKey = address ? { toString: () => address } : null
+  let publicKey: PublicKey | null = null
+  if (address) {
+    try {
+      publicKey = new PublicKey(address)
+    } catch {
+      publicKey = null
+    }
+  }
 
   return {
     publicKey,

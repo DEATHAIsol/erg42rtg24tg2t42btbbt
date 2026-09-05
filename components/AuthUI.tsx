@@ -1,32 +1,23 @@
 'use client'
 
 import { ReactNode } from 'react'
-import { SignedIn, SignedOut, UserButton, ClerkLoaded, ClerkLoading } from '@clerk/nextjs'
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+import { clerkEnabled } from '@/lib/auth'
 
-/** Renders children only when signed in. */
+/** Renders children only when signed in. Renders nothing if Clerk is off. */
 export function ShowSignedIn({ children }: { children: ReactNode }) {
+  if (!clerkEnabled) return null
   return <SignedIn>{children}</SignedIn>
 }
 
-/**
- * Renders children when signed out, and also while Clerk is still loading.
- *
- * `<SignedOut>` alone renders nothing until Clerk resolves, so a slow or
- * blocked Clerk left the header with no sign-in links at all. These are plain
- * links to /sign-in and /sign-up, so they should always be reachable.
- */
+/** Renders children when signed out — and always, if Clerk is not configured. */
 export function ShowSignedOut({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <ClerkLoading>{children}</ClerkLoading>
-      <ClerkLoaded>
-        <SignedOut>{children}</SignedOut>
-      </ClerkLoaded>
-    </>
-  )
+  if (!clerkEnabled) return <>{children}</>
+  return <SignedOut>{children}</SignedOut>
 }
 
-/** The Clerk account menu. */
+/** The Clerk avatar menu, or nothing when Clerk is off. */
 export function AccountButton() {
+  if (!clerkEnabled) return null
   return <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: 'h-7 w-7' } }} />
 }

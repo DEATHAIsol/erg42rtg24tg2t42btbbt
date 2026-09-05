@@ -8,10 +8,10 @@ import { getOrderBook, getBestPrice, placeOrder, OrderType, Side } from '@/lib/c
 import { placePaperOrder } from '@/lib/paper-trading'
 import { useToast } from './Toast'
 import { playSuccessSound } from '@/lib/sounds'
-import { SITE_FEE_ETH, BALANCE_BUFFER_ETH, QUICK_AMOUNTS_ETH } from '@/lib/trading-config'
 
 // Trading fees
 const TRADING_FEE_PERCENT = 0.02 // 2% trading fee
+const SITE_FEE_SOL = 0.01 // 0.01 SOL site fee per trade
 
 interface TradingPanelProps {
   market: PolymarketMarket
@@ -32,28 +32,28 @@ export function TradingPanel({ market, priceData }: TradingPanelProps) {
   const [noPrice, setNoPrice] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
 const [loadingOrderBook, setLoadingOrderBook] = useState(false)
-const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in USD
+const [solPrice, setSolPrice] = useState<number>(180) // Default SOL price in USD
 
-  // Fetch ETH price
+  // Fetch SOL price
   useEffect(() => {
-    const fetchEthPrice = async () => {
+    const fetchSolPrice = async () => {
       try {
         const response = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+          'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'
         )
         if (response.ok) {
           const data = await response.json()
-          if (data.ethereum?.usd) {
-            setEthPrice(data.ethereum.usd)
+          if (data.solana?.usd) {
+            setSolPrice(data.solana.usd)
           }
         }
       } catch (error) {
-        console.error('Error fetching ETH price:', error)
+        console.error('Error fetching SOL price:', error)
       }
     }
     
-    fetchEthPrice()
-    const interval = setInterval(fetchEthPrice, 60000) // Refresh every minute
+    fetchSolPrice()
+    const interval = setInterval(fetchSolPrice, 60000) // Refresh every minute
     return () => clearInterval(interval)
   }, [])
 
@@ -68,6 +68,8 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
       clearInterval(interval)
     }
   }, [market.id, selectedOutcome])
+
+
 
   
   useEffect(() => {
@@ -170,6 +172,7 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
     }
   }
 
+
   /**
    * Polymarket returns bids ascending and asks descending, so slicing from the
    * front yields the *worst* orders — the far tail of the book — which looked
@@ -215,8 +218,8 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
         return
       }
 
-      // `size` is SHARES, not ETH. Each share pays out 1 ETH if the outcome
-      // resolves true. Passing ETH here made the engine deduct margin * price
+      // `size` is SHARES, not SOL. Each share pays out 1 SOL if the outcome
+      // resolves true. Passing SOL here made the engine deduct margin * price
       // instead of margin — i.e. the wrong amount left the balance.
       const size = (parseFloat(amount) * leverage) / price
 
@@ -225,13 +228,13 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
       // Total required = margin + trading fee + site fee + buffer
       const margin = parseFloat(amount)
       const tradingFee = margin * TRADING_FEE_PERCENT
-      const totalFees = tradingFee + SITE_FEE_ETH
+      const totalFees = tradingFee + SITE_FEE_SOL
       const totalCost = margin + totalFees // Match what's displayed: margin + fees
-      const required = totalCost + BALANCE_BUFFER_ETH
+      const required = totalCost + 0.01 // Add 0.01 SOL buffer
       const effectiveBalance = accountBalance
       if (effectiveBalance < required) {
         toast.showError(
-          `Insufficient ${mode === 'demo' ? 'demo' : ''} balance. Need ${required.toFixed(4)} ETH (includes fee and buffer), have ${effectiveBalance.toFixed(4)} ETH`.replace('  ', ' ')
+          `Insufficient ${mode === 'demo' ? 'demo' : ''} balance. Need ${required.toFixed(4)} SOL (includes 0.01 SOL buffer), have ${effectiveBalance.toFixed(4)} SOL`.replace('  ', ' ')
         )
         return
       }
@@ -306,7 +309,7 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
   
   // Fee calculations - fees are on the MARGIN (your cost), not borrowed amount
   const tradingFee = margin * TRADING_FEE_PERCENT
-  const siteFee = SITE_FEE_ETH
+  const siteFee = SITE_FEE_SOL
   const totalFees = tradingFee + siteFee
   
   // Total cost = margin + fees
@@ -319,9 +322,9 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
   const potentialProfit = potentialPayout - totalCost
   
   // USD conversions
-  const marginUsd = margin * ethPrice
-  const totalCostUsd = totalCost * ethPrice
-  const potentialPayoutUsd = potentialPayout * ethPrice
+  const marginUsd = margin * solPrice
+  const totalCostUsd = totalCost * solPrice
+  const potentialPayoutUsd = potentialPayout * solPrice
 
   return (
     <div className="flex flex-col h-full bg-terminal-surface">
@@ -346,10 +349,10 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
           <div className="text-right flex-shrink-0">
             <div className="text-xs text-terminal-text-muted mb-0.5">{balanceLabel}</div>
             <div className="text-sm font-bold text-terminal-accent num">
-              {balanceUnknown ? '—' : displayBalance.toFixed(4)} ETH
+              {balanceUnknown ? '—' : displayBalance.toFixed(4)} SOL
             </div>
             <div className="text-xs text-terminal-text-muted num">
-              ${((displayBalance * ethPrice)).toFixed(2)}
+              ${((displayBalance * solPrice)).toFixed(2)}
             </div>
           </div>
         </div>
@@ -508,10 +511,10 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
           {/* Amount Input */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="section-label">Amount (ETH)</label>
+              <label className="section-label">Amount (SOL)</label>
               <button
                 onClick={() => {
-                  const usable = Math.max(0, (displayBalance - SITE_FEE_ETH - 0.01) / (1 + TRADING_FEE_PERCENT))
+                  const usable = Math.max(0, (displayBalance - SITE_FEE_SOL - 0.01) / (1 + TRADING_FEE_PERCENT))
                   setAmount(usable > 0 ? usable.toFixed(4) : '0')
                 }}
                 className="text-[11px] font-semibold text-terminal-accent hover:text-terminal-accent-hover px-2 py-0.5 rounded bg-terminal-accent/10 border border-terminal-accent/30 hover:bg-terminal-accent/15 transition-colors"
@@ -529,10 +532,10 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
                 min="0"
                 className="terminal-input !py-3 !text-lg font-semibold num pr-14"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-terminal-text-muted pointer-events-none">ETH</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-terminal-text-muted pointer-events-none">SOL</span>
             </div>
             <div className="flex gap-1.5 mt-2">
-              {QUICK_AMOUNTS_ETH.map((val) => (
+              {[1, 5, 10, 50].map((val) => (
                 <button
                   key={val}
                   onClick={() => setAmount(val.toString())}
@@ -611,30 +614,30 @@ const [ethPrice, setEthPrice] = useState<number>(3000) // fallback ETH price in 
             <div className="p-4 bg-terminal-bg rounded-xl border border-terminal-border animate-fade-in">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="section-label">Summary</h4>
-                <span className="text-xs text-terminal-text-muted num">ETH ≈ ${ethPrice.toFixed(2)}</span>
+                <span className="text-xs text-terminal-text-muted num">SOL ≈ ${solPrice.toFixed(2)}</span>
               </div>
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-terminal-text-secondary">Cost</span>
-                  <span className="font-medium num">{margin.toFixed(4)} ETH <span className="text-terminal-text-muted text-xs">${marginUsd.toFixed(2)}</span></span>
+                  <span className="font-medium num">{margin.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${marginUsd.toFixed(2)}</span></span>
                 </div>
                 {leverage > 1 && (
                   <div className="flex justify-between">
                     <span className="text-terminal-text-secondary">Position ({leverage}x)</span>
-                    <span className="font-medium text-terminal-accent num">{positionSize.toFixed(4)} ETH</span>
+                    <span className="font-medium text-terminal-accent num">{positionSize.toFixed(4)} SOL</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-terminal-text-secondary">Fees</span>
-                  <span className="font-medium text-terminal-warning num">{totalFees.toFixed(4)} ETH</span>
+                  <span className="font-medium text-terminal-warning num">{totalFees.toFixed(4)} SOL</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-terminal-border/60">
                   <span className="text-terminal-text-primary font-medium">Total</span>
-                  <span className="font-bold num">{totalCost.toFixed(4)} ETH <span className="text-terminal-text-muted text-xs">${totalCostUsd.toFixed(2)}</span></span>
+                  <span className="font-bold num">{totalCost.toFixed(4)} SOL <span className="text-terminal-text-muted text-xs">${totalCostUsd.toFixed(2)}</span></span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-terminal-border/60">
                   <span className="text-terminal-text-secondary">Payout if win</span>
-                  <span className="font-bold text-terminal-success num">{potentialPayout.toFixed(4)} ETH <span className="text-xs">${potentialPayoutUsd.toFixed(2)}</span></span>
+                  <span className="font-bold text-terminal-success num">{potentialPayout.toFixed(4)} SOL <span className="text-xs">${potentialPayoutUsd.toFixed(2)}</span></span>
                 </div>
                 <div className="flex justify-between text-xs text-terminal-text-muted">
                   <span>ROI</span>

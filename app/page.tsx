@@ -3,7 +3,6 @@ import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import { TerminalHeader } from '@/components/TerminalHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MarketTicker, FeaturedMarkets } from '@/components/LiveMarketPreview'
-import { INITIAL_DEMO_BALANCE_ETH } from '@/lib/trading-config'
 
 /* Capability spec-sheet rows — typographic, not icon cards */
 const capabilities = [
@@ -29,7 +28,7 @@ const capabilities = [
     key: 'WALLET',
     title: 'Keys made in your browser',
     body:
-      'A Ethereum keypair is generated locally the moment you ask for one. Export it whenever you want. It never leaves your device.',
+      'A Solana keypair is generated locally the moment you ask for one. Export it whenever you want. It never leaves your device.',
   },
   {
     key: 'ACCOUNT',
@@ -39,7 +38,7 @@ const capabilities = [
   },
   {
     key: 'PAPER',
-    title: `${INITIAL_DEMO_BALANCE_ETH} ETH practice balance`,
+    title: '100 SOL practice balance',
     body:
       'Demo mode runs the same interface against the same live prices with simulated funds. Nothing at risk while you learn the desk.',
   },
@@ -78,7 +77,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-3 mb-8">
                   <span className="h-px w-8 bg-terminal-accent" />
                   <span className="section-label !text-terminal-accent">
-                    Prediction markets · Robinhood Chain
+                    Prediction markets · Solana
                   </span>
                 </div>
 
@@ -112,8 +111,8 @@ export default function LandingPage() {
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-7">
                   {[
                     ['Max leverage', '10×'],
-                    ['Settles in', 'ETH'],
-                    ['Practice balance', `${INITIAL_DEMO_BALANCE_ETH} ETH`],
+                    ['Settlement asset', 'SOL'],
+                    ['Practice balance', '100'],
                     ['Account needed', 'No'],
                   ].map(([label, value]) => (
                     <div key={label}>

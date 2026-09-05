@@ -13,9 +13,9 @@ export interface ParlayLeg {
 export interface PlacedParlay {
   id: string
   legs: ParlayLeg[]
-  stakeAmount: number // In ETH
+  stakeAmount: number // In SOL
   combinedOdds: number // Decimal 0-1, product of leg prices
-  potentialPayout: number // In ETH
+  potentialPayout: number // In SOL
   placedAt: string // ISO date string
   status: 'active' | 'won' | 'lost' | 'partial'
   /** Guards against crediting the same winning parlay more than once. */
