@@ -24,6 +24,17 @@ export function useCustodialWallet() {
   const [demoPreference, setDemoPreference] = useState(false)
   const [ready, setReady] = useState(false)
 
+  /**
+   * Clerk can stall (slow network, a blocking extension, a misconfigured
+   * instance). Without a deadline `ready` never flips and the header sits on a
+   * skeleton forever with no way to sign in. Fall back to the guest/demo view
+   * so the terminal stays usable.
+   */
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 4000)
+    return () => clearTimeout(t)
+  }, [])
+
   /* ------------------- Resolve the account address + balance ---------------- */
   const loadAccount = useCallback(async () => {
     try {
